@@ -17,7 +17,7 @@ const Header = () => {
         <a href="#" class="nav-link">About SDGs</a>
       </div>
       <div class="nav-actions">
-        <button class="signin-button">Sign In</button>
+        <a href="/signup" class="nav-link">Sign In</a>
         <button class="mobile-menu-button">
           <i class="fas fa-bars"></i>
         </button>
