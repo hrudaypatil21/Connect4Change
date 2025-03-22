@@ -8,43 +8,63 @@ export default function Project() {
   const projects = [
     {
       id: 1,
-      name: "Digital Literacy for Rural Schools",
+      name: "Mumbai Beach Cleanup Drive",
       description:
-        "Providing computer training and digital skills to children in underserved rural communities.",
-      status: "Ongoing",
-      sdgs: ["SDG 4", "SDG 17"],
-      volunteersNeeded: 5,
-      imageSrc: "/api/placeholder/300/200", // Add image source
+        "Join us in cleaning up the beaches of Mumbai and making them plastic-free.",
+      status: "Upcoming",
+      sdgs: ["SDG 14", "SDG 15"],
+      volunteersNeeded: 20,
+      imageSrc: "/api/placeholder/300/200",
     },
     {
       id: 2,
-      name: "Microentrepreneur Mentorship",
+      name: "Versova Beach Restoration",
       description:
-        "Connecting business professionals with local entrepreneurs to provide guidance and support for sustainable businesses.",
+        "Help restore the beauty of Versova Beach by participating in our cleanup activities.",
       status: "Upcoming",
-      sdgs: ["SDG 8", "SDG 17"],
-      volunteersNeeded: 3,
-      imageSrc: "/api/placeholder/300/200", // Add image source
+      sdgs: ["SDG 14", "SDG 15"],
+      volunteersNeeded: 15,
+      imageSrc: "/api/placeholder/300/200",
     },
     {
       id: 3,
-      name: "Community Health Awareness",
+      name: "Juhu Beach Cleanup Campaign",
       description:
-        "Organizing health camps and awareness programs in underserved communities about preventive healthcare.",
-      status: "Ongoing",
-      sdgs: ["SDG 3", "SDG 17"],
-      volunteersNeeded: 8,
-      imageSrc: "/api/placeholder/300/200", // Add image source
+        "Join our campaign to clean Juhu Beach and raise awareness about marine pollution.",
+      status: "Upcoming",
+      sdgs: ["SDG 14", "SDG 15"],
+      volunteersNeeded: 25,
+      imageSrc: "/api/placeholder/300/200",
     },
     {
       id: 4,
-      name: "Clean Water Initiative",
+      name: "Dadar Beach Cleanup Initiative",
       description:
-        "Installing water filtration systems in rural villages to provide access to clean drinking water.",
+        "Participate in our initiative to clean Dadar Beach and protect marine life.",
       status: "Upcoming",
-      sdgs: ["SDG 6", "SDG 17"],
+      sdgs: ["SDG 14", "SDG 15"],
       volunteersNeeded: 10,
-      imageSrc: "/api/placeholder/300/200", // Add image source
+      imageSrc: "/api/placeholder/300/200",
+    },
+    {
+      id: 5,
+      name: "Marine Drive Beach Cleanup",
+      description:
+        "Join us in cleaning Marine Drive Beach and promoting a cleaner environment.",
+      status: "Ongoing",
+      sdgs: ["SDG 14", "SDG 15"],
+      volunteersNeeded: 30,
+      imageSrc: "/api/placeholder/300/200",
+    },
+    {
+      id: 6,
+      name: "Girgaum Chowpatty Cleanup",
+      description:
+        "Help us maintain the cleanliness of Girgaum Chowpatty Beach through regular cleanups.",
+      status: "Completed",
+      sdgs: ["SDG 14", "SDG 15"],
+      volunteersNeeded: 0,
+      imageSrc: "/api/placeholder/300/200",
     },
   ];
 
