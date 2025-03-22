@@ -1,0 +1,156 @@
+/* ProjectsPage.css */
+
+/* Page Container */
+.projects-page {
+    min-height: 100vh;
+    background-color: #f9fafb; /* bg-gray-50 */
+    padding: 3rem 1rem; /* py-12 px-4 */
+  }
+  
+  /* Container for Projects */
+  .projects-container {
+    max-width: 80rem; /* max-w-7xl */
+    margin-left: auto;
+    margin-right: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Responsive grid */
+    gap: 1.5rem; /* Space between cards */
+    padding: 2rem; /* Padding around the grid */
+  }
+  
+  /* Page Title */
+  .page-title {
+    font-size: 1.875rem; /* text-3xl */
+    font-weight: 700; /* font-bold */
+    color: #1f2937; /* text-gray-800 */
+    margin-bottom: 2rem; /* mb-8 */
+  }
+  
+  /* Search Bar */
+  .search-bar {
+    width: 100%;
+    padding: 0.5rem 1rem; /* px-4 py-2 */
+    border: 1px solid #d1d5db; /* border-gray-300 */
+    border-radius: 0.5rem; /* rounded-lg */
+    outline: none;
+    margin-bottom: 2rem; /* mb-8 */
+  }
+  
+  .search-bar:focus {
+    border-color: #0d9488; /* focus:ring-teal-500 */
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.5); /* focus:ring-2 */
+  }
+  
+  /* Projects Grid */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr); /* grid-cols-1 */
+    gap: 1.5rem; /* gap-6 */
+  }
+  
+  @media (min-width: 640px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, 1fr); /* sm:grid-cols-2 */
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .projects-grid {
+      grid-template-columns: repeat(3, 1fr); /* lg:grid-cols-3 */
+    }
+  }
+  
+  /* Project Card */
+  .project-card {
+    background-color: #ffffff; /* bg-white */
+    border-radius: 0.75rem; /* rounded-xl */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+    overflow: hidden;
+    transition: box-shadow 0.3s ease; /* hover:shadow-lg */
+  }
+  
+  .project-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* hover:shadow-lg */
+  }
+  
+  /* Card Content */
+  .card-content {
+    padding: 1.5rem; /* p-6 */
+  }
+  
+  /* Project Status */
+  .project-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem; /* mb-4 */
+  }
+  
+  .status-badge {
+    padding: 0.25rem 0.75rem; /* px-3 py-1 */
+    border-radius: 9999px; /* rounded-full */
+    font-size: 0.875rem; /* text-sm */
+    font-weight: 600; /* font-semibold */
+  }
+  
+  .status-ongoing {
+    background-color: #dcfce7; /* bg-green-100 */
+    color: #166534; /* text-green-800 */
+  }
+  
+  .status-upcoming {
+    background-color: #dbeafe; /* bg-blue-100 */
+    color: #1e40af; /* text-blue-800 */
+  }
+  
+  .volunteers-needed {
+    font-size: 0.875rem; /* text-sm */
+    color: #6b7280; /* text-gray-500 */
+  }
+  
+  /* Project Name */
+  .project-name {
+    font-size: 1.25rem; /* text-xl */
+    font-weight: 700; /* font-bold */
+    color: #1f2937; /* text-gray-800 */
+    margin-bottom: 0.5rem; /* mb-2 */
+  }
+  
+  /* Project Description */
+  .project-description {
+    color: #4b5563; /* text-gray-600 */
+    margin-bottom: 1rem; /* mb-4 */
+  }
+  
+  /* SDG Tags */
+  .sdg-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem; /* gap-2 */
+  }
+  
+  .sdg-tag {
+    padding: 0.25rem 0.5rem; /* px-2 py-1 */
+    background-color: #ccfbf1; /* bg-teal-100 */
+    color: #0f766e; /* text-teal-800 */
+    font-size: 0.75rem; /* text-xs */
+    font-weight: 600; /* font-semibold */
+    border-radius: 9999px; /* rounded-full */
+  }
+  
+  /* Join Button */
+  .join-button {
+    width: 100%;
+    background-color: #0d9488; /* bg-teal-600 */
+    color: #ffffff; /* text-white */
+    padding: 0.5rem 1rem; /* px-4 py-2 */
+    border-radius: 0.5rem; /* rounded-lg */
+    font-weight: 600; /* font-semibold */
+    margin-top: 1.5rem; /* mt-6 */
+    transition: background-color 0.3s ease; /* hover:bg-teal-700 */
+  }
+  
+  .join-button:hover {
+    background-color: #0f766e; /* hover:bg-teal-700 */
+  }
+
