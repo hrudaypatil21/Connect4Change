@@ -248,6 +248,8 @@
     align-items: center;
     background: linear-gradient(to right, var(--background-white), var(--background-light));
     width: 100%;
+    justify-content: center;
+    text-align: center;
   }
   
   .hero-container {
@@ -255,7 +257,9 @@
   }
   
   .hero-content {
-    max-width: 600px;
+    max-width: 500px;
+    width: 100%;
+    margin-left: 225px;
   }
   
   .hero-title {
@@ -327,9 +331,14 @@
   .sdgs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    gap: 1rem;
+    gap: 1.5rem;
+    justify-content: center;
+    /* background-color: var(--sdg-green); */
+    padding: 0;
+    max-width: 650px;
+    width: 100%;
+    margin: 0 auto;
   }
-  
   .sdg-item {
     height: 80px;
     display: flex;
