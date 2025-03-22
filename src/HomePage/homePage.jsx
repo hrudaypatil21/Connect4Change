@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./homePage.css";
 
 export default function HomePage() {
@@ -13,8 +14,12 @@ export default function HomePage() {
         <h1 class="hero-title">Connect. Collaborate. Create Impact.</h1>
         <p class="hero-description">Join the platform that connects passionate individuals, teams, and NGOs to create meaningful impact and achieve Sustainable Development Goals together.</p>
         <div class="hero-buttons">
+         <Link to="/individual-registration">
           <button class="primary-button">Join as Individual</button>
+          </Link>
+          <Link to="/ngo-registration">
           <button class="secondary-button">Register NGO</button>
+          </Link>
         </div>
       </div>
     </div>
