@@ -1,0 +1,106 @@
+ 
+/* ProjectCard.css */
+
+/* Project Card Container */
+.project-card {
+    background-color: #ffffff; /* White background */
+    border-radius: 0.75rem; /* Rounded corners */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Shadow */
+    overflow: hidden; /* Ensure content stays within the card */
+    transition: box-shadow 0.3s ease; /* Smooth hover effect */
+  }
+  
+  .project-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Hover shadow */
+  }
+  
+  /* Project Image */
+  .project-image img {
+    width: 100%; /* Full width */
+    height: 200px; /* Fixed height */
+    object-fit: cover; /* Ensure image covers the area */
+  }
+  
+  /* Project Details */
+  .project-details {
+    padding: 1.5rem; /* Padding inside the card */
+  }
+  
+  /* Project Name */
+  .project-name {
+    font-size: 1.25rem; /* Large font size */
+    font-weight: 700; /* Bold font */
+    color: #1f2937; /* Dark gray text */
+    margin-bottom: 0.75rem; /* Space below the title */
+  }
+  
+  /* Project Description */
+  .project-description {
+    font-size: 0.875rem; /* Small font size */
+    color: #4b5563; /* Gray text */
+    margin-bottom: 1rem; /* Space below the description */
+  }
+  
+  /* Project Metadata */
+  .project-metadata {
+    display: flex;
+    justify-content: space-between; /* Space between status and SDGs */
+    align-items: center;
+    margin-bottom: 1.5rem; /* Space below metadata */
+  }
+  
+  /* Project Status */
+  .project-status {
+    font-size: 0.875rem; /* Small font size */
+    font-weight: 600; /* Semi-bold font */
+    color: #ffffff; /* White text */
+    background-color: #0d9488; /* Teal background */
+    padding: 0.25rem 0.75rem; /* Padding inside the badge */
+    border-radius: 9999px; /* Rounded badge */
+  }
+  
+  /* Project SDGs */
+  .project-sdgs {
+    font-size: 0.875rem; /* Small font size */
+    color: #6b7280; /* Light gray text */
+  }
+  
+  /* Project Actions */
+  .project-actions {
+    display: flex;
+    gap: 0.75rem; /* Space between buttons */
+  }
+  
+  /* Volunteer Button */
+  .volunteer-button {
+    flex: 1; /* Take up available space */
+    background-color: #0d9488; /* Teal background */
+    color: #ffffff; /* White text */
+    padding: 0.5rem 1rem; /* Padding inside the button */
+    border: none;
+    border-radius: 0.5rem; /* Rounded corners */
+    font-weight: 600; /* Semi-bold font */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+  }
+  
+  .volunteer-button:hover {
+    background-color: #0f766e; /* Darker teal on hover */
+  }
+  
+  /* Donate Button */
+  .donate-button {
+    flex: 1; /* Take up available space */
+    background-color: #3b82f6; /* Blue background */
+    color: #ffffff; /* White text */
+    padding: 0.5rem 1rem; /* Padding inside the button */
+    border: none;
+    border-radius: 0.5rem; /* Rounded corners */
+    font-weight: 600; /* Semi-bold font */
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth hover effect */
+  }
+  
+  .donate-button:hover {
+    background-color: #2563eb; /* Darker blue on hover */
+  }
