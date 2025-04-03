@@ -4,6 +4,7 @@ import "./VolunteerDashboard.css";
 
 function VolunteerDashboard() {
   // Sample data - In a real application, this would come from an API
+  //this is a change for commit 
   const volunteerInfo = {
     name: "Priya Sharma",
     avatar: "/api/placeholder/150/150",
