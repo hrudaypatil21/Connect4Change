@@ -72,22 +72,22 @@
   }
   
   .individual-button {
-    background-color: #3498db;
+    background-color: #27ae60;
     color: white;
   }
   
   .individual-button:hover {
-    background-color: #2980b9;
+    background-color: #219653;
   }
   
   .login-link {
     text-align: center;
     margin-top: 20px;
-    color: #7f8c8d;
+    color: #219653;
   }
   
   .login-link a {
-    color: #3498db;
+    color: #219653;
     text-decoration: none;
   }
   

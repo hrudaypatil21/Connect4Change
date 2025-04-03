@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './IndividualRegistration.css';
 
 const IndividualRegistration = () => {
@@ -129,10 +130,11 @@ const IndividualRegistration = () => {
               <option value="one-time">One-time projects only</option>
             </select>
           </div>
-          
+          <Link to="/volunteer-dashboard">
           <button type="submit" className="submit-button individual-button">
             Create Account
           </button>
+          </Link>
         </form>
         
         <div className="login-link">

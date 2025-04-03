@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './NGORegistration.css';
+import { Link } from 'react-router-dom';
+import NGODashboard from '../NGODashboard/NGODashboard';
 
 const NGORegistration = () => {
   const [formData, setFormData] = useState({
@@ -173,10 +175,11 @@ const NGORegistration = () => {
               required
             />
           </div>
-          
-          <button type="submit" className="submit-button ngo-button">
-            Register Organization
-          </button>
+          <Link to="/ngo-dashboard"> 
+            <button type="submit" className="submit-button ngo-button">
+              Register Organization
+            </button>
+          </Link>
         </form>
         
         <div className="login-link">
