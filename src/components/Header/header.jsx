@@ -12,12 +12,12 @@ const Header = () => {
       <div class="main-menu">
         <a href="/" class="nav-link">Home</a>
         <a href="/projects" class="nav-link">Projects</a>
-        <a href="#" class="nav-link">NGOs</a>
+        <a href="/ngos" class="nav-link">NGOs</a>
         <a href="#" class="nav-link">Volunteers</a>
-        <a href="#" class="nav-link">About SDGs</a>
+        <a href="/sdg-cards" class="nav-link">About SDGs</a>
       </div>
       <div class="nav-actions">
-        <a href="/signup" class="nav-link">Sign In</a>
+        <button class="signin-button">Sign In</button>
         <button class="mobile-menu-button">
           <i class="fas fa-bars"></i>
         </button>

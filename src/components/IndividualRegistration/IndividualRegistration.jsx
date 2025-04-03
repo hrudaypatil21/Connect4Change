@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import './IndividualRegistration.css';
 
 const IndividualRegistration = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullname: '',
     email: '',
@@ -11,11 +10,8 @@ const IndividualRegistration = () => {
     confirmPassword: '',
     skills: '',
     interests: '',
-    availability: 'occasionally',
-    location: ''
+    availability: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,84 +19,17 @@ const IndividualRegistration = () => {
       ...prevState,
       [name]: value
     }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.fullname.trim()) newErrors.fullname = 'Full name is required';
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    if (!formData.skills.trim()) newErrors.skills = 'Skills are required';
-    if (!formData.interests.trim()) newErrors.interests = 'Interests are required';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Convert skills and interests to arrays
-      const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
-      const interestsArray = formData.interests.split(',').map(interest => interest.trim()).filter(interest => interest);
-      
-      const response = await fetch('http://127.0.0.1:8000/api/register/individual/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          first_name: formData.fullname.split(' ')[0],
-          last_name: formData.fullname.split(' ').slice(1).join(' '),
-          password: formData.password,
-          confirm_password: formData.confirmPassword,
-          location: formData.location,
-          skills: skillsArray,
-          interests: interestsArray,
-          availability: formData.availability
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        alert('Registration successful! You can now log in.');
-        navigate('/login');
-      } else {
-        // Handle backend validation errors
-        if (data.email) {
-          setErrors(prev => ({ ...prev, email: data.email[0] }));
-        }
-        console.error('Registration failed:', data);
-        alert(data.detail || 'Registration failed. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred during registration. Please try again.');
-    } finally {
-      setIsSubmitting(false);
+    // Validation could be added here
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords don't match!");
+      return;
     }
+    console.log('Form submitted:', formData);
+    // Here you would typically send the data to your backend
   };
 
   return (
@@ -108,7 +37,7 @@ const IndividualRegistration = () => {
       <div className="registration-form">
         <h1 className="form-title">Join as Individual</h1>
         
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="fullname">Full Name</label>
             <input
@@ -119,9 +48,7 @@ const IndividualRegistration = () => {
               onChange={handleChange}
               placeholder="Enter your full name"
               required
-              className={errors.fullname ? 'error' : ''}
             />
-            {errors.fullname && <span className="error-message">{errors.fullname}</span>}
           </div>
           
           <div className="form-group">
@@ -134,20 +61,6 @@ const IndividualRegistration = () => {
               onChange={handleChange}
               placeholder="Enter your email address"
               required
-              className={errors.email ? 'error' : ''}
-            />
-            {errors.email && <span className="error-message">{errors.email}</span>}
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="location">Location</label>
-            <input
-              type="text"
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              placeholder="Enter your city/country"
             />
           </div>
           
@@ -159,11 +72,9 @@ const IndividualRegistration = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Create a password (min 8 characters)"
+              placeholder="Create a password"
               required
-              className={errors.password ? 'error' : ''}
             />
-            {errors.password && <span className="error-message">{errors.password}</span>}
           </div>
           
           <div className="form-group">
@@ -176,9 +87,7 @@ const IndividualRegistration = () => {
               onChange={handleChange}
               placeholder="Confirm your password"
               required
-              className={errors.confirmPassword ? 'error' : ''}
             />
-            {errors.confirmPassword && <span className="error-message">{errors.confirmPassword}</span>}
           </div>
           
           <div className="form-group">
@@ -188,11 +97,9 @@ const IndividualRegistration = () => {
               name="skills"
               value={formData.skills}
               onChange={handleChange}
-              placeholder="List your skills separated by commas (e.g., teaching, web development, cooking)"
+              placeholder="Please list your skills (e.g., teaching, web development, cooking, etc.)"
               required
-              className={errors.skills ? 'error' : ''}
             />
-            {errors.skills && <span className="error-message">{errors.skills}</span>}
           </div>
           
           <div className="form-group">
@@ -202,11 +109,9 @@ const IndividualRegistration = () => {
               name="interests"
               value={formData.interests}
               onChange={handleChange}
-              placeholder="List your interests separated by commas (e.g., education, environment, animal welfare)"
+              placeholder="What causes are you passionate about? (e.g., education, environment, animal welfare, etc.)"
               required
-              className={errors.interests ? 'error' : ''}
             />
-            {errors.interests && <span className="error-message">{errors.interests}</span>}
           </div>
           
           <div className="form-group">
@@ -225,18 +130,15 @@ const IndividualRegistration = () => {
               <option value="one-time">One-time projects only</option>
             </select>
           </div>
-          
-          <button 
-            type="submit" 
-            className="submit-button individual-button"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
+          <Link to="/volunteer-dashboard">
+          <button type="submit" className="submit-button individual-button">
+            Create Account
           </button>
+          </Link>
         </form>
         
         <div className="login-link">
-          Already have an account? <a href="/login">Log in</a>
+          Already have an account? <a href="#">Log in</a>
         </div>
       </div>
     </div>
