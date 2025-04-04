@@ -153,9 +153,9 @@ const CreateProject = () => {
               onChange={handleChange}
               required
             >
-              <option value="Planning">Planning</option>
-              <option value="In Progress">In Progress</option>
-              <option value="Completed">Completed</option>
+              <option className="dropdown-option" value="Planning">Planning</option>
+              <option className="dropdown-option"value="In Progress">In Progress</option>
+              <option className="dropdown-option"value="Completed">Completed</option>
             </select>
           </div>
 
