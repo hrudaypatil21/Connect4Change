@@ -13,7 +13,7 @@ const Header = () => {
         <a href="/" class="nav-link">Home</a>
         <a href="/projects" class="nav-link">Projects</a>
         <a href="/ngos" class="nav-link">NGOs</a>
-        <a href="#" class="nav-link">Volunteers</a>
+        <a href="/volunteers-page" class="nav-link">Volunteers</a>
         <a href="/sdg-cards" class="nav-link">About SDGs</a>
       </div>
       <div class="nav-actions">

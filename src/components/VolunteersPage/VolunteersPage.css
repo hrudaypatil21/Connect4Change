@@ -1,0 +1,243 @@
+/* VolunteersPage.css */
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    background-color: #fff;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+  
+  /* Header Styles */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .logo {
+    display: flex;
+    align-items: center;
+  }
+  
+  .logo img {
+    height: 40px;
+    margin-right: 10px;
+  }
+  
+  .logo-text {
+    color: #3498db;
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .main-nav ul {
+    display: flex;
+    list-style: none;
+  }
+  
+  .main-nav ul li {
+    margin-left: 30px;
+  }
+  
+  .main-nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: color 0.3s;
+  }
+  
+  .main-nav ul li a:hover, 
+  .main-nav ul li a.active {
+    color: #3498db;
+  }
+  
+  .sign-in-btn {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 20px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: background-color 0.3s;
+  }
+  
+  .sign-in-btn:hover {
+    background-color: #2980b9;
+  }
+  
+  /* Main Content */
+  .main-content {
+    padding: 40px 0;
+  }
+  
+  .page-title {
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 36px;
+    color: #2c3e50;
+  }
+  
+  /* SDG Navigation */
+  .sdg-navigation {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+  
+  .sdg-navigation .all-sdgs {
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .sdg-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .sdg-tag {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 14px;
+    text-decoration: none;
+    color: #fff;
+    margin-bottom: 8px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+  
+  .sdg-tag:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+  }
+  
+  /* SDG Colors */
+  .sdg-1 { background-color: #e5243b; }
+  .sdg-2 { background-color: #DDA63A; }
+  .sdg-3 { background-color: #4C9F38; }
+  .sdg-4 { background-color: #C5192D; }
+  .sdg-5 { background-color: #FF3A21; }
+  .sdg-6 { background-color: #26BDE2; }
+  .sdg-7 { background-color: #FCC30B; }
+  .sdg-8 { background-color: #A21942; }
+  .sdg-9 { background-color: #FD6925; }
+  .sdg-10 { background-color: #DD1367; }
+  .sdg-11 { background-color: #FD9D24; }
+  .sdg-12 { background-color: #BF8B2E; }
+  .sdg-13 { background-color: #3F7E44; }
+  .sdg-14 { background-color: #0A97D9; }
+  .sdg-15 { background-color: #56C02B; }
+  .sdg-16 { background-color: #00689D; }
+  .sdg-17 { background-color: #19486A; }
+  
+  /* Volunteer Cards Grid */
+  .volunteer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 30px;
+  }
+  
+  .volunteer-card {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s;
+  }
+  
+  .volunteer-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .volunteer-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #eee;
+  }
+  
+  .volunteer-details {
+    padding: 20px;
+  }
+  
+  .volunteer-name {
+    color: #3498db;
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .volunteer-role {
+    font-size: 16px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+  }
+  
+  .volunteer-sdgs {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+    gap: 8px;
+  }
+  
+  .volunteer-sdg-tag {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    color: white;
+    font-weight: bold;
+  }
+  
+  .volunteer-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+  }
+  
+  .skill-tag {
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .main-nav ul {
+      margin-top: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .main-nav ul li {
+      margin: 5px 15px 5px 0;
+    }
+    
+    .sign-in-btn {
+      margin-top: 15px;
+    }
+    
+    .volunteer-grid {
+      grid-template-columns: 1fr;
+    }
+  }

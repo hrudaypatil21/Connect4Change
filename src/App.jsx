@@ -14,6 +14,7 @@ import NGODashboard from "./components/NGODashboard/NGODashboard";
 import CreateProject from "./components/CreateProject/CreateProject";
 import SignUp from "./components/signUp/signUp";
 import SDGCards from "./components/SDGCards/SDGCards";
+import VolunteersPage from "./components/VolunteersPage/VolunteersPage";
 // import VolunteerForm from "./VolunteerForm/VolunteerForm";
 
 
@@ -38,6 +39,7 @@ function App() {
           <Route path="/ngo-dashboard" element={<NGODashboard />} />
           <Route path="/create-project" element={<CreateProject />} />
           <Route path="/sdg-cards" element={<SDGCards />} />
+          <Route path="/volunteers-page" element={<VolunteersPage/>} />
           {/* <Route path="/volunteer-form" element={<VolunteerForm />} /> */}
           {/* <Route path="/projects" element={<Projects />} /> */}
         </Routes>
