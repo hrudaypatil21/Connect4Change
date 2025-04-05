@@ -58,7 +58,7 @@ const VolunteersPage = () => {
   return (
     <div className="container">
       {/* Header */}
-      <header className="header">
+      {/* <header className="header">
         <div className="logo">
           <img src="/logo.png" alt="Connect4Change Logo" />
           <span className="logo-text">Connect4Change</span>
@@ -75,7 +75,7 @@ const VolunteersPage = () => {
         </nav>
         
         <a href="/signin" className="sign-in-btn">Sign In</a>
-      </header>
+      </header> */}
       
       {/* Main Content */}
       <div className="main-content">
