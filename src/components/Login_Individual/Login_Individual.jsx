@@ -32,7 +32,7 @@ const LoginIndividual = () => {
     />
     <button type="submit">Login</button>
     <div className="login-link">
-      Don’t have an account? <a href="/individual-registration">Sign up</a>
+      Don’t have an account? <a href="/individual-registration">Register</a>
     </div>
   </form>
 </div>

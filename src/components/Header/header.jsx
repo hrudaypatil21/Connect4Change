@@ -4,23 +4,23 @@ import './header.css'; // Import the CSS file for the header
 
 const Header = () => {
   return (
-    <nav class="navigation">
-    <div class="container nav-container">
-      <div class="logo-container">
-        <img src="/api/placeholder/40/40" alt="Logo" class="logo-image" />
-        <span class="logo-text">Connect4Change</span>
+    <nav className="navigation">
+    <div className="container nav-container">
+      <div className="logo-container">
+        <img src="/api/placeholder/40/40" alt="Logo" className="logo-image" />
+        <span className="logo-text">Connect4Change</span>
       </div>
-      <div class="main-menu">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/projects" class="nav-link">Projects</a>
-        <a href="/ngos" class="nav-link">NGOs</a>
-        <a href="/volunteers-page" class="nav-link">Volunteers</a>
-        <a href="/sdg-cards" class="nav-link">About SDGs</a>
+      <div className="main-menu">
+        <a href="/" className="nav-link">Home</a>
+        <a href="/projects" className="nav-link">Projects</a>
+        <a href="/ngos" className="nav-link">NGOs</a>
+        <a href="/volunteers-page" className="nav-link">Volunteers</a>
+        <a href="/sdg-cards" className="nav-link">About SDGs</a>
       </div>
-      <div class="nav-actions">
-       <Link to="/signup"> <button class="signin-button">Sign In</button></Link>
-        <button class="mobile-menu-button">
-          <i class="fas fa-bars"></i>
+      <div className="nav-actions">
+       <Link to="/signin"> <button className="signin-button">Sign In</button></Link>
+        <button className="mobile-menu-button">
+          <i className="fas fa-bars"></i>
         </button>
       </div>
     </div>

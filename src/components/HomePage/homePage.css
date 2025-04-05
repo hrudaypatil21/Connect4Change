@@ -311,6 +311,7 @@
   
   .section-description {
     color: var(--text-medium);
+    margin-left: 5rem;
   }
   
   .see-all-link {

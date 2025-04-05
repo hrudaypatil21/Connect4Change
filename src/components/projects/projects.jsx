@@ -5,99 +5,94 @@ import "./Projects.css";
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // In a real app, you would fetch projects from your backend/API
-  // For now, we'll simulate loading projects from localStorage
   useEffect(() => {
-    // Load projects from localStorage or use demo data if none exists
-    const loadProjects = () => {
-      try {
-        const savedProjects = localStorage.getItem("projects");
-        if (savedProjects) {
-          return JSON.parse(savedProjects);
+    const timer = setTimeout(() => {
+      const loadProjects = () => {
+        try {
+          const savedProjects = localStorage.getItem("projects");
+          if (savedProjects) {
+            return JSON.parse(savedProjects);
+          }
+        } catch (error) {
+          console.error("Error loading projects:", error);
         }
-      } catch (error) {
-        console.error("Error loading projects:", error);
-      }
-      
-      // Return demo projects if no saved projects exist
-      return [
-        {
-          id: 1,
-          title: "Mumbai Beach Cleanup Drive",
-          description: "Join us in cleaning up the beaches of Mumbai and making them plastic-free.",
-          startDate: "2025-04-15",
-          endDate: "2025-04-30",
-          location: "Mumbai, Maharashtra",
-          sdgs: ["SDG 14", "SDG 15"],
-          status: "Planning",
-          progress: 0,
-          volunteers: {
-            required: 20,
-            enrolled: 0,
-            pending: 0
+        
+        return [
+          {
+            id: 1,
+            title: "Mumbai Beach Cleanup Drive",
+            description: "Join us in cleaning up the beaches of Mumbai and making them plastic-free.",
+            startDate: "2025-04-15",
+            endDate: "2025-04-30",
+            location: "Mumbai, Maharashtra",
+            sdgs: ["SDG 14", "SDG 15"],
+            status: "Planning",
+            progress: 0,
+            volunteers: {
+              required: 20,
+              enrolled: 0,
+              pending: 0
+            }
+          },
+          {
+            id: 2,
+            title: "Versova Beach Restoration",
+            description: "Help restore the beauty of Versova Beach by participating in our cleanup activities.",
+            startDate: "2025-05-01",
+            endDate: "2025-05-15",
+            location: "Versova, Mumbai",
+            sdgs: ["SDG 14", "SDG 15"],
+            status: "Planning",
+            progress: 0,
+            volunteers: {
+              required: 15,
+              enrolled: 0,
+              pending: 0
+            }
+          },
+          {
+            id: 3,
+            title: "Rural Education Initiative",
+            description: "Volunteer to teach underprivileged children in rural areas and help improve literacy rates.",
+            startDate: "2025-04-10",
+            endDate: "2025-06-10",
+            location: "Pune District, Maharashtra",
+            sdgs: ["SDG 4", "SDG 10"],
+            status: "In Progress",
+            progress: 25,
+            volunteers: {
+              required: 10,
+              enrolled: 4,
+              pending: 2
+            }
           }
-        },
-        {
-          id: 2,
-          title: "Versova Beach Restoration",
-          description: "Help restore the beauty of Versova Beach by participating in our cleanup activities.",
-          startDate: "2025-05-01",
-          endDate: "2025-05-15",
-          location: "Versova, Mumbai",
-          sdgs: ["SDG 14", "SDG 15"],
-          status: "Planning",
-          progress: 0,
-          volunteers: {
-            required: 15,
-            enrolled: 0,
-            pending: 0
-          }
-        },
-        {
-          id: 3,
-          title: "Rural Education Initiative",
-          description: "Volunteer to teach underprivileged children in rural areas and help improve literacy rates.",
-          startDate: "2025-04-10",
-          endDate: "2025-06-10",
-          location: "Pune District, Maharashtra",
-          sdgs: ["SDG 4", "SDG 10"],
-          status: "In Progress",
-          progress: 25,
-          volunteers: {
-            required: 10,
-            enrolled: 4,
-            pending: 2
-          }
-        }
-      ];
-    };
+        ];
+      };
 
-    setProjects(loadProjects());
+      setProjects(loadProjects());
+      setIsLoading(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, []);
 
-  // Add a new project (this would be called from CreateProject component)
-  const addProject = (newProject) => {
-    const updatedProjects = [...projects, newProject];
-    setProjects(updatedProjects);
-    
-    // Save to localStorage
-    try {
-      localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    } catch (error) {
-      console.error("Error saving projects:", error);
-    }
-  };
-
-  // Filter projects based on search term
   const filteredProjects = projects.filter((project) => {
+    if (!searchTerm.trim()) return true;
+    
     const searchLower = searchTerm.toLowerCase();
     return (
       project.title.toLowerCase().includes(searchLower) ||
       project.description.toLowerCase().includes(searchLower) ||
-      project.location.toLowerCase().includes(searchLower)
+      project.location.toLowerCase().includes(searchLower) ||
+      project.sdgs.some(sdg => sdg.toLowerCase().includes(searchLower))
     );
   });
+
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
 
   return (
     <div className="projects-page">
@@ -111,13 +106,27 @@ export default function Projects() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <i className="search-icon fas fa-search"></i>
+          <i className="search-icon"></i>
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="clear-search"
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
-      {filteredProjects.length === 0 ? (
+      {isLoading ? (
+        <div className="loading-spinner"></div>
+      ) : filteredProjects.length === 0 ? (
         <div className="no-projects">
-          <p>No projects found. Try a different search term or create a new project.</p>
+          <p>
+            {searchTerm 
+              ? "No projects found. Try a different search term or create a new project."
+              : "There are currently no projects available. Create one to get started!"}
+          </p>
         </div>
       ) : (
         <div className="projects-grid">

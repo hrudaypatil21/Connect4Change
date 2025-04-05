@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "./signUp.css";
+import "./signIn.css";
 
 export default function SignUp() {
     return (
@@ -8,7 +8,7 @@ export default function SignUp() {
             <section>
                 <h3 className="signup-title">Login As Individual or Ngo</h3>
                 <div className="signup-options">
-                    <Link className="signup-option" to="/login-individual">
+                    <Link className="signup-option" to="/login-Individual">
                         Individual
                     </Link>
                     <Link className="signup-option" to="/login-ngo">
