@@ -12,7 +12,7 @@ import VolunteerDashboard from "./components/VolunteerDashboard/VolunteerDashboa
 import NGORegistration from "./components/NGORegistration/NGORegistration";
 import NGODashboard from "./components/NGODashboard/NGODashboard";
 import CreateProject from "./components/CreateProject/CreateProject";
-import SignUp from "./components/signUp/signUp";
+import SignIn from "./components/signIn/signIn";
 import SDGCards from "./components/SDGCards/SDGCards";
 // import VolunteerForm from "./VolunteerForm/VolunteerForm";
 
@@ -28,7 +28,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path='/projects' element={<Projects />} />
           <Route path="*" element={<h1>404 - Page Not Found</h1>} />
-          <Route path="/signup" element={<SignUp />} />
+          <Route path="/signin" element={<SignIn />} />
           <Route path="/ngos" element={<NGOS />} />
           <Route path="/signup/individual-registration" element={<IndividualRegistration />} />
           <Route path="/signup/ngo-registration" element={<NGORegistration />} />

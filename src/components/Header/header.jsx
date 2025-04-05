@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom for navigation
 import './header.css'; // Import the CSS file for the header
 
 const Header = () => {
@@ -17,7 +18,7 @@ const Header = () => {
         <a href="/sdg-cards" class="nav-link">About SDGs</a>
       </div>
       <div class="nav-actions">
-        <button class="signin-button">Sign In</button>
+       <Link to="/signin"> <button class="signin-button">Sign In</button></Link>
         <button class="mobile-menu-button">
           <i class="fas fa-bars"></i>
         </button>
