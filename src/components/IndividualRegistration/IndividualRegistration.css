@@ -60,6 +60,23 @@
     box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
   }
   
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: #27ae60;
+    box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2);
+  }
+  
+  .file-description {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .file-input {
+    padding: 8px 0;
+  }
   .submit-button {
     width: 100%;
     padding: 12px;
