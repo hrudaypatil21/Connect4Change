@@ -1,9 +1,5 @@
 import React from 'react';
-<<<<<<< HEAD
-import { Link } from 'react-router-dom'; // Import Link from react-router-dom for navigation
-=======
 import {Link} from 'react-router-dom'; // Import Link from react-router-dom for navigation
->>>>>>> ana
 import './header.css'; // Import the CSS file for the header
 
 const Header = () => {
@@ -22,11 +18,7 @@ const Header = () => {
         <a href="/sdg-cards" class="nav-link">About SDGs</a>
       </div>
       <div class="nav-actions">
-<<<<<<< HEAD
        <Link to="/signin"> <button class="signin-button">Sign In</button></Link>
-=======
-       <Link to="/signup"> <button class="signin-button">Sign In</button></Link>
->>>>>>> ana
         <button class="mobile-menu-button">
           <i class="fas fa-bars"></i>
         </button>
