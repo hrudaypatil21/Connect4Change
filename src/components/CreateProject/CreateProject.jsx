@@ -1,7 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate if using React Router
 import "./CreateProject.css";
 
 const CreateProject = () => {
+  const navigate = useNavigate(); // Initialize useNavigate hook if using React Router
+  
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
@@ -59,19 +62,42 @@ const CreateProject = () => {
       }
     };
 
-    console.log("Project Submitted:", newProject);
-
-    // Reset form
-    setProjectData({
-      title: "",
-      description: "",
-      startDate: "",
-      endDate: "",
-      location: "",
-      sdgs: [],
-      status: "Planning",
-      volunteersRequired: 0
-    });
+    // Save the new project to localStorage
+    try {
+      // Get existing projects
+      const existingProjects = localStorage.getItem("projects");
+      let projects = [];
+      
+      if (existingProjects) {
+        projects = JSON.parse(existingProjects);
+      }
+      
+      // Add the new project
+      projects.push(newProject);
+      
+      // Save updated projects list
+      localStorage.setItem("projects", JSON.stringify(projects));
+      
+      console.log("Project created and saved:", newProject);
+      
+      // Reset form
+      setProjectData({
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        location: "",
+        sdgs: [],
+        status: "Planning",
+        volunteersRequired: 0
+      });
+      
+      // Redirect to projects page if using React Router
+      navigate("/projects");
+      
+    } catch (error) {
+      console.error("Error saving project:", error);
+    }
   };
 
   return (
@@ -154,8 +180,8 @@ const CreateProject = () => {
               required
             >
               <option className="dropdown-option" value="Planning">Planning</option>
-              <option className="dropdown-option"value="In Progress">In Progress</option>
-              <option className="dropdown-option"value="Completed">Completed</option>
+              <option className="dropdown-option" value="In Progress">In Progress</option>
+              <option className="dropdown-option" value="Completed">Completed</option>
             </select>
           </div>
 
