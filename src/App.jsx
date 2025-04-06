@@ -15,6 +15,8 @@ import CreateProject from "./components/CreateProject/CreateProject";
 import SignUp from "./components/signUp/signUp";
 import SDGCards from "./components/SDGCards/SDGCards";
 import VolunteersPage from "./components/VolunteersPage/VolunteersPage";
+import LoginIndividual from './components/Login_Individual/Login_Individual';
+import LoginNGO from './components/Login-Ngo/Login-Ngo';
 // import VolunteerForm from "./VolunteerForm/VolunteerForm";
 
 
@@ -42,6 +44,8 @@ function App() {
           <Route path="/volunteers-page" element={<VolunteersPage/>} />
           {/* <Route path="/volunteer-form" element={<VolunteerForm />} /> */}
           {/* <Route path="/projects" element={<Projects />} /> */}
+          <Route path="/login-individual" element={<LoginIndividual />} />
+          <Route path="/login-ngo" element={<LoginNGO />} />
         </Routes>
       </Router>
     </>
