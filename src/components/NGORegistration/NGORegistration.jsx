@@ -183,7 +183,7 @@ const NGORegistration = () => {
         </form>
         
         <div className="login-link">
-          Already registered? <a href="#" className="ngo-link">Log in</a>
+          Already registered? <a href="/login-ngo" className="ngo-link">Log in</a>
         </div>
       </div>
     </div>

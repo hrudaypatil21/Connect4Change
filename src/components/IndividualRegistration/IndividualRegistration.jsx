@@ -202,7 +202,7 @@ const IndividualRegistration = () => {
         </form>
 
         <div className="login-link">
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link to="/login-individual">Log in</Link>
         </div>
       </div>
     </div>
