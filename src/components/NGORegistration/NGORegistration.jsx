@@ -1,21 +1,27 @@
-import React, { useState } from 'react';
-import './NGORegistration.css';
-import { Link } from 'react-router-dom';
-import NGODashboard from '../NGODashboard/NGODashboard';
+import React, { useState } from "react";
+import axios from "axios";
+import { Link, useNavigate } from 'react-router-dom';
+import "./NGORegistration.css";
 
 const NGORegistration = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    orgName: '',
-    regNumber: '',
-    orgEmail: '',
-    orgPhone: '',
-    orgAddress: '',
-    orgMission: '',
-    volNeeds: '',
-    verificationDocs: null,
-    password: '',
-    confirmPassword: ''
+    orgName: "",
+    regNumber: "",
+    email: "",
+    phone: "",
+    address: "",
+    mission: "",
+    website: "",
+    volNeeds: [], 
+    password: "",
+    confirmPassword: "",
   });
+
+  const [verificationDocs, setVerificationDocs] = useState(null);
+  const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,165 +31,212 @@ const NGORegistration = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleVolNeedsChange = (e) => {
+    const volNeedsArray = e.target.value.split(',').map(need => need.trim());
     setFormData(prevState => ({
       ...prevState,
-      verificationDocs: e.target.files[0]
+      volNeeds: volNeedsArray
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleFileChange = (e) => {
+    setVerificationDocs(e.target.files[0]);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Validation could be added here
+    setError(null);
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
       return;
     }
-    console.log('Form submitted:', formData);
-    // Here you would typically send the data to your backend
+    
+    try {
+      setIsLoading(true);
+
+
+      const formDataToSend = new FormData();
+      formDataToSend.append("orgName", formData.orgName);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("regNumber", formData.regNumber);
+      formDataToSend.append("password", formData.password);
+      formDataToSend.append("phone", formData.phone || "");
+      formDataToSend.append("address", formData.address || "");
+      formDataToSend.append("mission", formData.mission || "");
+      formDataToSend.append("website", formData.website || "");
+      formDataToSend.append("volNeeds", JSON.stringify(formData.volNeeds));
+
+      if (verificationDocs) {
+        formDataToSend.append("verificationDocs", verificationDocs);
+      }
+
+      const response = await axios.post("http://localhost:8081/api/register-ngo", formDataToSend, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          }, 
+          transformRequest: (data) => data
+        });
+
+      localStorage.setItem('ngo', JSON.stringify(response.data));
+      navigate("/ngo-dashboard");
+      
+    } catch (error) {
+      console.error("Registration error:", error.response?.data);
+      setError(error.response?.data?.error || 'Registration failed. Please check your details and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="registration-container">
       <div className="registration-form">
         <h1 className="form-title">Register as NGO</h1>
-        
+
+        {error && <div className="error-message">{error}</div>}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="orgName">Organization Name</label>
-            <input
-              type="text"
-              id="orgName"
-              name="orgName"
+            <label htmlFor="orgName">Organization Name*</label>
+            <input 
+              type="text" 
+              id="orgName" 
+              name="orgName" 
               value={formData.orgName}
-              onChange={handleChange}
-              placeholder="Enter your organization's name"
+              onChange={handleChange} 
+              placeholder="Enter your org name" 
               required
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="regNumber">Registration Number</label>
-            <input
-              type="text"
-              id="regNumber"
-              name="regNumber"
-              value={formData.regNumber}
-              onChange={handleChange}
-              placeholder="Enter registration/charity number"
-              required
-            />
+            <label htmlFor="regNumber">Registration Number*</label>
+            <input type="text" id="regNumber" name="regNumber" value={formData.regNumber} 
+            onChange={handleChange} placeholder="Enter your reg number" required/>
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="orgEmail">Organization Email</label>
+            <label htmlFor="email">Organization Email*</label>
             <input
               type="email"
-              id="orgEmail"
-              name="orgEmail"
-              value={formData.orgEmail}
+              id="email"
+              name="email"
+              value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your organization's email address"
-              required
+              placeholder="Enter your email" required
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="orgPhone">Contact Phone</label>
+            <label htmlFor="phone">Phone Number</label>
             <input
               type="tel"
-              id="orgPhone"
-              name="orgPhone"
-              value={formData.orgPhone}
+              id="phone"
+              name="phone"
+              value={formData.phone}
               onChange={handleChange}
-              placeholder="Enter contact phone number"
-              required
+              placeholder="Enter phone number" required
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="orgAddress">Organization Address</label>
-            <textarea
-              id="orgAddress"
-              name="orgAddress"
-              value={formData.orgAddress}
+            <label htmlFor="address">Address</label>
+            <input
+              type="text"
+              id="address"
+              name="address"
+              value={formData.address}
               onChange={handleChange}
-              placeholder="Enter your organization's address"
-              required
+              placeholder="Enter address" required
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="orgMission">Mission & Focus Areas</label>
+            <label htmlFor="mission">Mission Statement</label>
             <textarea
-              id="orgMission"
-              name="orgMission"
-              value={formData.orgMission}
+              id="mission"
+              name="mission"
+              value={formData.mission}
               onChange={handleChange}
-              placeholder="Describe your organization's mission and main focus areas"
-              required
+              placeholder="Describe your mission" required
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="volNeeds">Volunteer Needs</label>
-            <textarea
+            <label htmlFor="website">Website</label>
+            <input
+              type="url"
+              id="website"
+              name="website"
+              value={formData.website}
+              onChange={handleChange}
+              placeholder="Enter website URL" 
+            />
+          </div>
+
+          {/* Volunteer Needs */}
+          <div className="form-group">
+            <label htmlFor="volNeeds">Volunteer Needs (comma separated)</label>
+            <input
+              type="text"
               id="volNeeds"
               name="volNeeds"
-              value={formData.volNeeds}
-              onChange={handleChange}
-              placeholder="What kind of volunteers are you looking for? What skills do you need?"
-              required
+              value={formData.volNeeds.join(', ')}
+              onChange={handleVolNeedsChange}
+              placeholder="teaching, mentoring, cleaning, etc."
             />
           </div>
-          
+
           <div className="form-group">
-            <label htmlFor="verificationDocs">Verification Documents</label>
-            <p className="file-description">Please upload documents to verify your NGO status (registration certificate, etc.)</p>
+            <label htmlFor="verificationDocs">Verification Documents*</label>
             <input
               type="file"
               id="verificationDocs"
               name="verificationDocs"
               onChange={handleFileChange}
-              className="file-input"
-              required
+              accept=".pdf,.doc,.docx"
             />
           </div>
-          
+
+          {/* Password */}
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Password*</label>
             <input
               type="password"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Create a password"
-              required
+              placeholder="Create a password" required minLength="8"
             />
           </div>
-          
+
+          {/* Confirm Password */}
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Confirm Password*</label>
             <input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm your password"
-              required
+              placeholder="Confirm your password" required minLength="8"
             />
           </div>
-          <Link to="/ngo-dashboard"> 
-            <button type="submit" className="submit-button ngo-button">
-              Register Organization
-            </button>
-          </Link>
+
+
+
+          <button
+            type="submit"
+            className="submit-button"
+            disabled={isLoading}
+          >
+            {isLoading ? "Registering..." : "Register Organization"}
+          </button>
         </form>
-        
         <div className="login-link">
-          Already registered? <a href="/login-ngo" className="ngo-link">Log in</a>
+          Already have an account? <Link to="/login">Log in</Link>
         </div>
       </div>
     </div>
