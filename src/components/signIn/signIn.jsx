@@ -8,7 +8,7 @@ export default function SignUp() {
             <section>
                 <h3 className="signup-title">Login As Individual or Ngo</h3>
                 <div className="signup-options">
-                    <Link className="signup-option" to="/login-Individual">
+                    <Link className="signup-option" to="/login-individual">
                         Individual
                     </Link>
                     <Link className="signup-option" to="/login-ngo">

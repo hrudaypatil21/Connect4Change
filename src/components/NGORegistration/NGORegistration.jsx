@@ -71,14 +71,17 @@ const NGORegistration = () => {
         formDataToSend.append("verificationDocs", verificationDocs);
       }
 
-      const response = await axios.post("http://localhost:8081/api/register-ngo", formDataToSend, {
+      const response = await axios.post('http://localhost:8081/api/register-ngo', formDataToSend, {
           headers: {
             "Content-Type": "multipart/form-data",
           }, 
           transformRequest: (data) => data
         });
-
+      // Store NGO data properly
       localStorage.setItem('ngo', JSON.stringify(response.data));
+      localStorage.setItem('userType', 'ngo');
+      
+      // Navigate programmatically after successful registration
       navigate("/ngo-dashboard");
       
     } catch (error) {
@@ -224,9 +227,7 @@ const NGORegistration = () => {
               placeholder="Confirm your password" required minLength="8"
             />
           </div>
-
-
-
+          <Link to="/ngo-dashboard">  
           <button
             type="submit"
             className="submit-button"
@@ -234,9 +235,10 @@ const NGORegistration = () => {
           >
             {isLoading ? "Registering..." : "Register Organization"}
           </button>
+          </Link>
         </form>
         <div className="login-link">
-          Already have an account? <Link to="/login">Log in</Link>
+          Already have an account? <Link to="/login-ngo">Log in</Link>
         </div>
       </div>
     </div>

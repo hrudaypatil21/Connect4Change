@@ -159,19 +159,6 @@ const IndividualRegistration = () => {
             <input type="text" id="skills" name="skills" value={formData.skills.join(', ')}
               onChange={handleSkillsChange} placeholder="e.g., Teaching, Web Development, Cooking" />
           </div>
-
-          <div className="form-group">
-            <label htmlFor="verificationDocs">Resume</label>
-            <p className="file-description">Please upload documents (Resume, etc.)</p>
-            <input
-              type="file"
-              id="verificationDocs"
-              name="verificationDocs"
-              onChange={handleFileChange}
-              className="file-input"
-              required
-            />
-          </div>
           <div className="form-group">
             <label htmlFor="interests">Interests (comma separated)</label>
             <input type="text" id="interests" name="interests" value={formData.interests.join(', ')}

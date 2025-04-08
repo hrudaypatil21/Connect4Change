@@ -1,9 +1,7 @@
 import { useState } from "react";
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
 import "./App.css";
 import HomePage from "./components/HomePage/homePage";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link } from "react-router-dom";
 import Header from "./components/Header/header";
 import Projects from "./components/projects/projects";
 import NGOS from "./components/Ngos/NGOS";
@@ -17,14 +15,12 @@ import SDGCards from "./components/SDGCards/SDGCards";
 import VolunteersPage from "./components/VolunteersPage/VolunteersPage";
 import LoginIndividual from './components/Login_Individual/Login_Individual';
 import LoginNGO from './components/Login-Ngo/Login-Ngo';
-// import VolunteerForm from "./VolunteerForm/VolunteerForm";
-
+import ProtectedRoute from "./components/ProtectedRoute"
+import { AuthProvider } from "./components/AuthContext"; // Add this import
 
 function App() {
-  // const [count, setCount] = useState(0)
-
   return (
-    <>
+    <AuthProvider>
       <Router>
         <Header/>
         <Routes>
@@ -36,20 +32,38 @@ function App() {
           <Route path="/signup/individual-registration" element={<IndividualRegistration />} />
           <Route path="/signup/ngo-registration" element={<NGORegistration />} />
           <Route path="/individual-registration" element={<IndividualRegistration />} />
-          <Route path="/volunteer-dashboard" element={<VolunteerDashboard />} />
           <Route path="/ngo-registration" element={<NGORegistration />} />
-          <Route path="/ngo-dashboard" element={<NGODashboard />} />
-          <Route path="/create-project" element={<CreateProject />} />
+          
+          {/* Protected Routes */}
+          <Route path="/ngo-dashboard" element={
+            <ProtectedRoute allowedRoles={['ngo']}>
+              <NGODashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/volunteer-dashboard" element={
+            <ProtectedRoute allowedRoles={['individual']}>
+              <VolunteerDashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/create-project" element={
+            <ProtectedRoute allowedRoles={['ngo']}>
+              <CreateProject />
+            </ProtectedRoute>
+          } />
+          
           <Route path="/sdg-cards" element={<SDGCards />} />
           <Route path="/volunteers-page" element={<VolunteersPage/>} />
-          {/* <Route path="/volunteer-form" element={<VolunteerForm />} /> */}
-          {/* <Route path="/projects" element={<Projects />} /> */}
           <Route path="/login-individual" element={<LoginIndividual />} />
           <Route path="/login-ngo" element={<LoginNGO />} />
         </Routes>
       </Router>
-    </>
+    </AuthProvider>
   );
 }
+
+// Move the SignUp component to a separate file or remove it if not needed
+// It can't be in the same file as another default export
 
 export default App;
