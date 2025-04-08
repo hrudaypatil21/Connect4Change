@@ -17,7 +17,7 @@ export const MainContentPart2 = () => {
           
           <div className="projects-grid">
             <div className="project-card">
-              <img src="/api/placeholder/400/200" alt="Project Image" className="project-image" />
+              <img src="src/assets/images/digital litracy for rural areas.jpg" alt="Project Image" className="project-image" />
               <div className="project-content">
                 <div className="project-tags">
                   <span className="tag tag-blue">SDG 4</span>
@@ -33,7 +33,7 @@ export const MainContentPart2 = () => {
             </div>
             
             <div className="project-card">
-              <img src="/api/placeholder/400/200" alt="Project Image" className="project-image"/>
+              <img src="src/assets/images/Micro entrepreneur Mentorship.jpg" alt="Project Image" className="project-image"/>
               <div className="project-content">
                 <div className="project-tags">
                   <span className="tag tag-yellow">SDG 8</span>
@@ -49,7 +49,7 @@ export const MainContentPart2 = () => {
             </div>
             
             <div className="project-card">
-              <img src="/api/placeholder/400/200" alt="Project Image" className="project-image"/>
+              <img src="src/assets/images/Community Health Awareness.jpg" alt="Project Image" className="project-image"/>
               <div className="project-content">
                 <div className="project-tags">
                   <span className="tag tag-red">SDG 3</span>
@@ -80,7 +80,7 @@ export const MainContentPart2 = () => {
           
           <div className="ngo-grid">
             <div className="ngo-card">
-              <img src="/api/placeholder/80/80" alt="NGO Logo" className="ngo-logo" />
+              <img src="src/assets/images/education fisrt.jpg" alt="NGO Logo" className="ngo-logo" />
               <h3 className="ngo-title">Education First</h3>
               <p className="ngo-description">Promoting quality education in underserved communities</p>
               <div className="ngo-tags">
@@ -90,7 +90,7 @@ export const MainContentPart2 = () => {
             </div>
             
             <div className="ngo-card">
-              <img src="/api/placeholder/80/80" alt="NGO Logo" className="ngo-logo"/>
+              <img src="src/assets/images/Green Earth.jpg" alt="NGO Logo" className="ngo-logo"/>
               <h3 className="ngo-title">Green Earth</h3>
               <p className="ngo-description">Working towards environmental sustainability</p>
               <div className="ngo-tags">
@@ -100,7 +100,7 @@ export const MainContentPart2 = () => {
             </div>
             
             <div className="ngo-card">
-              <img src="/api/placeholder/80/80" alt="NGO Logo" className="ngo-logo"/>
+              <img src="src/assets/images/skill builders.png" alt="NGO Logo" className="ngo-logo"/>
               <h3 className="ngo-title">Skill Builders</h3>
               <p className="ngo-description">Empowering youth through skills development</p>
               <div className="ngo-tags">
@@ -110,7 +110,7 @@ export const MainContentPart2 = () => {
             </div>
             
             <div className="ngo-card">
-              <img src="/api/placeholder/80/80" alt="NGO Logo" className="ngo-logo"/>
+              <img src="src/assets/images/health matters.png" alt="NGO Logo" className="ngo-logo"/>
               <h3 className="ngo-title">Health Matters</h3>
               <p className="ngo-description">Providing healthcare access to underserved populations</p>
               <div className="ngo-tags">
@@ -133,7 +133,7 @@ export const MainContentPart2 = () => {
           <div className="testimonials-grid">
             <div className="testimonial-card">
               <div className="testimonial-header">
-                <img src="/api/placeholder/64/64" alt="User Avatar" className="testimonial-avatar" />
+                <img src="src/assets/images/priya sharma.png" alt="User Avatar" className="testimonial-avatar" />
                 <div>
                   <h3 className="testimonial-name">Priya Sharma</h3>
                   <p className="testimonial-role">Volunteer, Digital Skills Mentor</p>
@@ -144,7 +144,7 @@ export const MainContentPart2 = () => {
             
             <div className="testimonial-card">
               <div className="testimonial-header">
-                <img src="/api/placeholder/64/64" alt="User Avatar" className="testimonial-avatar"/>
+                <img src="src/assets/images/rameshh patel.jpg" alt="User Avatar" className="testimonial-avatar"/>
                 <div>
                   <h3 className="testimonial-name">Ramesh Patel</h3>
                   <p className="testimonial-role">Director, Education First NGO</p>

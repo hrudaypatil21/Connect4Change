@@ -20,7 +20,7 @@ export const HeroSection = () => {
         </div>
       </div>
       <div className="hero-image">
-        <img src="/api/placeholder/500/300" alt="Collaboration illustration" />
+        <img src="src/assets/images/connect4change.jpeg" alt="Collaboration illustration" />
       </div>
     </section>
   );

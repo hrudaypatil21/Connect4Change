@@ -8,7 +8,7 @@ export const FooterSection = () => {
         <div className="footer-grid">
           <div className="footer-about">
             <div className="footer-logo">
-              <img src="/api/placeholder/40/40" alt="Logo" className="logo-image"/>
+              <img src="src/assets/images/connect4change.jpeg" alt="Logo" className="logo-image"/>
               <span className="logo-text">Connect4Change</span>
             </div>
             <p className="footer-description">Connecting passionate individuals and NGOs to create meaningful impact and achieve Sustainable Development Goals together.</p>
