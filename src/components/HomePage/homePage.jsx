@@ -1,8 +1,11 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { HeroSection } from "./HeroSection";
+import { MainContentPart1 } from "./MainContentPart1";
+import { MainContentPart2 } from "./MainContentPart2";
+import { FooterSection } from "./Footer";
 import "./homePage.css";
 
-export default function HomePage() {
+const HomePage = () => {
   return (
     <>
 
@@ -378,4 +381,5 @@ export default function HomePage() {
   </footer>	
     </>
   );
-}
+};
+export default HomePage;

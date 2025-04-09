@@ -8,7 +8,7 @@ import "./NGODashboard.css";
   // Sample data - In a real application, this would come from an API
   const ngoInfo = {
     name: "Education First",
-    logo: "/api/placeholder/100/100",
+    logo: "src/assets/images/education fisrt.jpg",
     description: "Promoting quality education in underserved communities",
     sdgs: ["SDG 4", "SDG 17"],
     contactPerson: "Ramesh Patel",
