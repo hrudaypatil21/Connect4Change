@@ -24,7 +24,8 @@ export default function HomePage() {
       </div>
     </div>
     <div class="hero-image">
-      <img src="/api/placeholder/500/300" alt="Collaboration illustration" />
+      <img src="api/placeholder/600/400"
+ alt="Collaboration illustration" />
     </div>
   </section>
 
