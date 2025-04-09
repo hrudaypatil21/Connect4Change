@@ -8,7 +8,7 @@ const VolunteersPage = () => {
     {
       id: 1,
       name: "Sarah Johnson",
-      image: "/placeholder-sarah.jpg",
+      image: "src/assets/images/sarah.jpg",
       role: "Education specialist with 5 years of experience in curriculum development.",
       sdgs: [{ id: 4, name: "Quality Education" }],
       skills: ["Teaching", "Mentoring", "Curriculum Design"]
@@ -16,7 +16,7 @@ const VolunteersPage = () => {
     {
       id: 2,
       name: "Miguel Rodriguez",
-      image: "/placeholder-miguel.jpg",
+      image: "src/assets/images/miguel.webp",
       role: "Environmental engineer focused on sustainable urban development.",
       sdgs: [
         { id: 11, name: "Sustainable Cities and Communities" },
@@ -27,7 +27,7 @@ const VolunteersPage = () => {
     {
       id: 3,
       name: "Aisha Patel",
-      image: "/placeholder-aisha.jpg",
+      image: "src/assets/images/aisha.webp",
       role: "Community organizer with experience in grassroots initiatives.",
       sdgs: [{ id: 17, name: "Partnerships for the Goals" }],
       skills: ["Coordination", "Fundraising", "Community Engagement"]

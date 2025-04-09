@@ -16,7 +16,7 @@ const ProjectCard = ({ project }) => {
   return (
     <div className="project-card">
       <div className="project-image">
-        <img src="/api/placeholder/300/200" alt={project.title} />
+        <img src={project.image} />
         <div className="project-status">{project.status}</div>
       </div>
       

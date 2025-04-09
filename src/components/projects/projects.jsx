@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import ProjectCard from "./ProjectCard";
+import ProjectCard from "./projectCard";
 import "./Projects.css";
 
 export default function Projects() {
@@ -34,7 +34,8 @@ export default function Projects() {
               required: 20,
               enrolled: 0,
               pending: 0
-            }
+            },
+            image:"src/assets/images/mumbai beach.jpg",
           },
           {
             id: 2,
@@ -50,7 +51,7 @@ export default function Projects() {
               required: 15,
               enrolled: 0,
               pending: 0
-            }
+            },image:"src/assets/images/versova beach.jpg",
           },
           {
             id: 3,
@@ -66,7 +67,8 @@ export default function Projects() {
               required: 10,
               enrolled: 4,
               pending: 2
-            }
+            },
+            image:"src/assets/images/rural edu.jpg",
           }
         ];
       };
