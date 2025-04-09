@@ -199,6 +199,7 @@ const IndividualRegistration = () => {
           <button type="submit" className="submit-button individual-button" disabled={isLoading}>
             {isLoading ? 'Registering...' : 'Create Account'}
           </button>
+        
         </form>
 
         <div className="login-link">
