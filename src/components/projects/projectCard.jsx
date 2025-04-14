@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import "./ProjectCard.css";
 
-const ProjectCard = ({ project }) => {
-  // Calculate progress based on enrolled volunteers (if available)
+const ProjectCard = ({ project, user }) => {
+  const [isApplying, setIsApplying] = useState(false);
+  const [applicationStatus, setApplicationStatus] = useState(null);
+  const [error, setError] = useState(null);
+
   const calculateProgress = () => {
     if (!project.volunteers || project.volunteers.required === 0) return 0;
     return Math.min(
@@ -13,7 +18,6 @@ const ProjectCard = ({ project }) => {
 
   const progressPercentage = calculateProgress();
 
-  // Format dates
   const formatDate = (dateString) => {
     if (!dateString) return "TBD";
     const date = new Date(dateString);
@@ -23,6 +27,60 @@ const ProjectCard = ({ project }) => {
       year: 'numeric'
     });
   };
+  
+  const handleApply = async () => {
+    try {
+      setIsApplying(true);
+      const user = JSON.parse(localStorage.getItem('user'));
+      const token = localStorage.getItem('token');
+
+      if (!user || user.type !== 'individual') {
+        // Redirect to login or show error
+        return;
+      }
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/applications`,
+        {
+          projectId: project.id,
+          volunteerId: user.id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setApplicationStatus('applied');
+    } catch (error) {
+      console.error("Application failed:", error);
+      setApplicationStatus('error');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
+  // Check if user has already applied (if applications data is available)
+  const renderApplyButton = () => {
+    if (applicationStatus === 'applied') {
+      return (
+        <button className="action-button success" disabled>
+          Application Submitted!
+        </button>
+      );
+    }
+
+    return (
+      <button 
+        className="action-button secondary" 
+        onClick={handleApply}
+        disabled={isApplying}
+      >
+        {isApplying ? 'Applying...' : 'Apply for Project'}
+      </button>
+    );
+  };
 
   return (
     <div className="project-card">
@@ -31,7 +89,7 @@ const ProjectCard = ({ project }) => {
           src={project.image}
           alt={project.title}
           onError={(e) => {
-            e.target.src = "/images/default-project.jpg"; // Fallback image
+            e.target.src = "/images/default-project.jpg";
           }}
         />
         <div className="project-status">{project.status || "UPCOMING"}</div>
@@ -40,7 +98,6 @@ const ProjectCard = ({ project }) => {
       <div className="project-content">
         <h3 className="project-title">{project.title}</h3>
         
-        {/* Add NGO name if available */}
         {project.ngoName && (
           <div className="project-ngo">
             <span className="ngo-label">Organized by:</span>
@@ -96,9 +153,15 @@ const ProjectCard = ({ project }) => {
         </div>
        
         <div className="project-actions">
-          <button className="action-button primary">View Details</button>
-          <button className="action-button secondary">Join Project</button>
-        </div>
+        <button className="action-button primary">View Details</button>
+        {renderApplyButton()}
+      </div>
+
+        {error && (
+          <div className="application-error">
+            <i className="fas fa-exclamation-circle"></i> {error}
+          </div>
+        )}
       </div>
     </div>
   );

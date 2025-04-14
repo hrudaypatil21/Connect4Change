@@ -96,7 +96,11 @@ export default function Projects() {
       ) : (
         <div className="projects-grid">
           {filteredProjects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard 
+            project={project} 
+            user={user} 
+            key={project.id} 
+          />
           ))}
         </div>
       )}
