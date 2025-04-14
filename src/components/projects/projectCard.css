@@ -181,3 +181,22 @@
   background-color: #14b134;
   color: white;
 }
+
+/* Add this to your existing ProjectCard.css */
+
+.project-ngo {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.ngo-label {
+  color: #666;
+  margin-right: 5px;
+}
+
+.ngo-name {
+  font-weight: 500;
+  color: #1e88e5;
+}

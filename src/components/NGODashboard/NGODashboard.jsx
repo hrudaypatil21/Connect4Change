@@ -14,21 +14,51 @@ function NGODashboard() {
   const [notifications, setNotifications] = useState([]);
   const [activeTab, setActiveTab] = useState("projects");
   const [isLoading, setIsLoading] = useState(true);
+  const [applications, setApplications] = useState([]);
+  const [pendingApplications, setPendingApplications] = useState([]);
+
+  useEffect(() => {
+    if (activeTab === "applications") {
+      const fetchApplications = async () => {
+        try {
+          const response = await axios.get(
+            `${API_BASE_URL}/api/applications/ngo/${ngoInfo.id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          const allApplications = response.data || [];
+          setApplications(allApplications);
+          setPendingApplications(
+            allApplications.filter((app) => app.status === "PENDING")
+          );
+        } catch (error) {
+          console.error("Failed to fetch applications:", error);
+        }
+      };
+
+      fetchApplications();
+    }
+  }, [activeTab, ngoInfo]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        
-        // Get user from localStorage
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user || user.type !== 'ngo') {
-          console.error('Access denied - not an NGO user:', user);
           navigate('/login-ngo');
+          return;
         }
+
+        // Use consistent ID - prefer UID for Firebase-based lookups
+        const identifier = user.uid || user.id;
 
         // Fetch NGO profile
         const profileResponse = await axios.get(
-          `${API_BASE_URL}/api/ngo-profile/${user.id}`,
+          `${API_BASE_URL}/api/ngo-profile/${identifier}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -36,10 +66,12 @@ function NGODashboard() {
           }
         );
 
+        // Use response data for all fields
         setNgoInfo({
-          id: user.id,
+          id: profileResponse.data.id,
+          uid: user.uid,
           orgName: profileResponse.data.orgName,
-          email: user.email,
+          email: profileResponse.data.email || user.email,
           phone: profileResponse.data.orgPhone,
           address: profileResponse.data.orgAddress,
           mission: profileResponse.data.orgMission,
@@ -50,12 +82,12 @@ function NGODashboard() {
           location: profileResponse.data.location,
           volNeeds: profileResponse.data.volNeeds || [],
           verified: profileResponse.data.isVerified,
-          createdAt: profileResponse.data.createdAt || new Date().toISOString()
+          createdAt: profileResponse.data.createdAt,
         });
 
-        // Fetch projects
+        // Fetch projects using the database ID from the profile response
         const projectsResponse = await axios.get(
-          `${API_BASE_URL}/api/projects/ngo/${user.id}`,
+          `${API_BASE_URL}/api/projects/ngo/${profileResponse.data.id}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -63,38 +95,14 @@ function NGODashboard() {
           }
         );
 
-        const projects = projectsResponse.data || [];
-        setActiveProjects(projects.filter(project => project.status === 'Active'));
-        setCompletedProjects(projects.filter(project => project.status === 'Completed'));
-
-        // Fetch volunteers
-        const volunteersResponse = await axios.get(
-          `${API_BASE_URL}/api/volunteers/ngo/${user.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
-            },
-          }
-        );
-
-        const allVolunteers = volunteersResponse.data || [];
-        setVolunteers(allVolunteers.filter(v => v.status === 'Active'));
-        setPendingVolunteers(allVolunteers.filter(v => v.status === 'Pending'));
-
-        // Mock notifications
-        setNotifications([
-          {
-            id: 1,
-            type: "application",
-            from: "John Doe",
-            content: "Applied to your Community Education Program",
-            time: "2 hours ago",
-            unread: true
-          }
-        ]);
-
+        // Rest of your data fetching...
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
+        if (error.response?.status === 403) {
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          navigate('/login-ngo');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -104,9 +112,9 @@ function NGODashboard() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/login-ngo');
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/login-ngo");
   };
 
   const handleVolunteerStatusChange = async (volunteerId, status) => {
@@ -116,20 +124,65 @@ function NGODashboard() {
         { status },
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
 
-      if (status === 'Approved') {
-        const volunteer = pendingVolunteers.find(v => v.id === volunteerId);
-        setVolunteers([...volunteers, { ...volunteer, status: 'Active' }]);
-        setPendingVolunteers(pendingVolunteers.filter(v => v.id !== volunteerId));
+      if (status === "Approved") {
+        const volunteer = pendingVolunteers.find((v) => v.id === volunteerId);
+        setVolunteers([...volunteers, { ...volunteer, status: "Active" }]);
+        setPendingVolunteers(
+          pendingVolunteers.filter((v) => v.id !== volunteerId)
+        );
       } else {
-        setPendingVolunteers(pendingVolunteers.filter(v => v.id !== volunteerId));
+        setPendingVolunteers(
+          pendingVolunteers.filter((v) => v.id !== volunteerId)
+        );
       }
     } catch (error) {
       console.error("Failed to update volunteer status:", error);
+    }
+  };
+
+  const handleApplicationStatusChange = async (applicationId, status) => {
+    try {
+      const response = await axios.put(
+        `${API_BASE_URL}/api/applications/${applicationId}/status`,
+        null,
+        {
+          params: { status },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      // Update the UI
+      setApplications(
+        applications.map((app) =>
+          app.id === applicationId ? response.data : app
+        )
+      );
+
+      setPendingApplications(
+        pendingApplications.filter((app) => app.id !== applicationId)
+      );
+
+      // Show success message
+      setNotifications([
+        {
+          id: Date.now(),
+          type: "success",
+          content: `Application ${status.toLowerCase()} successfully`,
+          time: "Just now",
+          unread: true,
+        },
+        ...notifications,
+      ]);
+    } catch (error) {
+      console.error("Failed to update application status:", error);
+      setError("Failed to update application status");
     }
   };
 
@@ -161,7 +214,10 @@ function NGODashboard() {
               <div className="ngo-name-container">
                 <h1 className="ngo-name">{ngoInfo.orgName}</h1>
                 {ngoInfo.verified && (
-                  <span className="verified-badge" title="Verified Organization">
+                  <span
+                    className="verified-badge"
+                    title="Verified Organization"
+                  >
                     <i className="fas fa-check-circle"></i>
                   </span>
                 )}
@@ -174,7 +230,9 @@ function NGODashboard() {
                   </span>
                 ))}
                 {ngoInfo.volNeeds.length > 3 && (
-                  <span className="tag tag-blue">+{ngoInfo.volNeeds.length - 3} more</span>
+                  <span className="tag tag-blue">
+                    +{ngoInfo.volNeeds.length - 3} more
+                  </span>
                 )}
               </div>
             </div>
@@ -210,13 +268,17 @@ function NGODashboard() {
                     <span className="item-label">
                       <i className="fas fa-phone"></i> Phone:
                     </span>
-                    <span className="item-value">{ngoInfo.phone || "Not provided"}</span>
+                    <span className="item-value">
+                      {ngoInfo.phone || "Not provided"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-map-marker-alt"></i> Location:
                     </span>
-                    <span className="item-value">{ngoInfo.location || "Not specified"}</span>
+                    <span className="item-value">
+                      {ngoInfo.location || "Not specified"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
@@ -271,7 +333,9 @@ function NGODashboard() {
                 <h3 className="sidebar-title">Organization Stats</h3>
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <span className="stat-value">{activeProjects.length + completedProjects.length}</span>
+                    <span className="stat-value">
+                      {activeProjects.length + completedProjects.length}
+                    </span>
                     <span className="stat-label">Total Projects</span>
                   </div>
                   <div className="stat-card">
@@ -280,7 +344,10 @@ function NGODashboard() {
                   </div>
                   <div className="stat-card">
                     <span className="stat-value">
-                      {volunteers.reduce((sum, volunteer) => sum + volunteer.hoursContributed, 0)}
+                      {volunteers.reduce(
+                        (sum, volunteer) => sum + volunteer.hoursContributed,
+                        0
+                      )}
                     </span>
                     <span className="stat-label">Volunteer Hours</span>
                   </div>
@@ -291,17 +358,32 @@ function NGODashboard() {
                 <div className="sidebar-section">
                   <h3 className="sidebar-title">Notifications</h3>
                   <div className="notifications-list">
-                    {notifications.map(notification => (
-                      <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
+                    {notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className={`notification-item ${
+                          notification.unread ? "unread" : ""
+                        }`}
+                      >
                         <div className="notification-icon">
-                          {notification.type === "application" && <i className="fas fa-user-plus"></i>}
-                          {notification.type === "message" && <i className="fas fa-envelope"></i>}
+                          {notification.type === "application" && (
+                            <i className="fas fa-user-plus"></i>
+                          )}
+                          {notification.type === "message" && (
+                            <i className="fas fa-envelope"></i>
+                          )}
                         </div>
                         <div className="notification-content">
-                          <p className="notification-text">{notification.content}</p>
+                          <p className="notification-text">
+                            {notification.content}
+                          </p>
                           <p className="notification-meta">
-                            <span className="notification-from">{notification.from}</span>
-                            <span className="notification-time">{notification.time}</span>
+                            <span className="notification-from">
+                              {notification.from}
+                            </span>
+                            <span className="notification-time">
+                              {notification.time}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -315,20 +397,24 @@ function NGODashboard() {
             <div className="dashboard-main">
               {/* Tabs Navigation */}
               <div className="dashboard-tabs">
-                <button 
+                <button
                   className={`tab ${activeTab === "projects" ? "active" : ""}`}
                   onClick={() => setActiveTab("projects")}
                 >
                   <i className="fas fa-project-diagram"></i> Projects
                 </button>
-                <button 
-                  className={`tab ${activeTab === "volunteers" ? "active" : ""}`}
+                <button
+                  className={`tab ${
+                    activeTab === "volunteers" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("volunteers")}
                 >
                   <i className="fas fa-users"></i> Volunteers
                 </button>
-                <button 
-                  className={`tab ${activeTab === "applications" ? "active" : ""}`}
+                <button
+                  className={`tab ${
+                    activeTab === "applications" ? "active" : ""
+                  }`}
                   onClick={() => setActiveTab("applications")}
                 >
                   <i className="fas fa-user-plus"></i> Applications
@@ -352,63 +438,75 @@ function NGODashboard() {
 
                   {activeProjects.length > 0 ? (
                     <div className="projects-list">
-                      {activeProjects.map(project => (
+                      {activeProjects.map((project) => (
                         <div key={project.id} className="project-item">
                           <div className="project-header">
                             <h3 className="project-title">{project.title}</h3>
-                            <span className={`project-status status-${project.status.toLowerCase()}`}>
+                            <span
+                              className={`project-status status-${project.status.toLowerCase()}`}
+                            >
                               {project.status}
                             </span>
                           </div>
-                          
+
                           <div className="project-description">
                             <p>{project.description}</p>
                           </div>
-                          
+
                           <div className="project-details">
                             <div className="detail-item">
                               <span className="detail-label">
                                 <i className="fas fa-calendar"></i> Timeline:
                               </span>
                               <span className="detail-value">
-                                {new Date(project.startDate).toLocaleDateString()} - {' '}
+                                {new Date(
+                                  project.startDate
+                                ).toLocaleDateString()}{" "}
+                                -{" "}
                                 {new Date(project.endDate).toLocaleDateString()}
                               </span>
                             </div>
                             <div className="detail-item">
                               <span className="detail-label">
-                                <i className="fas fa-map-marker-alt"></i> Location:
+                                <i className="fas fa-map-marker-alt"></i>{" "}
+                                Location:
                               </span>
-                              <span className="detail-value">{project.location}</span>
+                              <span className="detail-value">
+                                {project.location}
+                              </span>
                             </div>
                             <div className="detail-item">
                               <span className="detail-label">
                                 <i className="fas fa-users"></i> Volunteers:
                               </span>
                               <span className="detail-value">
-                                {project.volunteersEnrolled}/{project.volunteersNeeded}
+                                {project.volunteersEnrolled}/
+                                {project.volunteersNeeded}
                               </span>
                             </div>
                           </div>
-                          
+
                           <div className="project-progress">
                             <div className="progress-header">
-                              <span className="progress-label">Project Progress</span>
+                              <span className="progress-label">
+                                Project Progress
+                              </span>
                               <span className="progress-value">
                                 {project.progress}%
                               </span>
                             </div>
                             <div className="progress-bar">
-                              <div 
-                                className="progress-fill" 
+                              <div
+                                className="progress-fill"
                                 style={{ width: `${project.progress}%` }}
                               ></div>
                             </div>
                           </div>
-                          
+
                           <div className="project-actions">
                             <button className="project-action-btn">
-                              <i className="fas fa-chart-line"></i> View Analytics
+                              <i className="fas fa-chart-line"></i> View
+                              Analytics
                             </button>
                             <button className="project-action-btn">
                               <i className="fas fa-users"></i> Manage Volunteers
@@ -438,10 +536,10 @@ function NGODashboard() {
               {activeTab === "volunteers" && (
                 <div className="dashboard-section">
                   <h2 className="section-title">Your Volunteers</h2>
-                  
+
                   {volunteers.length > 0 ? (
                     <div className="volunteers-list">
-                      {volunteers.map(volunteer => (
+                      {volunteers.map((volunteer) => (
                         <div key={volunteer.id} className="volunteer-item">
                           <div className="volunteer-avatar">
                             {volunteer.name.charAt(0).toUpperCase()}
@@ -450,24 +548,32 @@ function NGODashboard() {
                             <h3 className="volunteer-name">{volunteer.name}</h3>
                             <p className="volunteer-email">{volunteer.email}</p>
                             <div className="volunteer-skills">
-                              {volunteer.skills.slice(0, 3).map((skill, index) => (
-                                <span key={index} className="tag tag-blue">
-                                  {skill}
-                                </span>
-                              ))}
+                              {volunteer.skills
+                                .slice(0, 3)
+                                .map((skill, index) => (
+                                  <span key={index} className="tag tag-blue">
+                                    {skill}
+                                  </span>
+                                ))}
                               {volunteer.skills.length > 3 && (
-                                <span className="tag tag-blue">+{volunteer.skills.length - 3} more</span>
+                                <span className="tag tag-blue">
+                                  +{volunteer.skills.length - 3} more
+                                </span>
                               )}
                             </div>
                           </div>
                           <div className="volunteer-stats">
                             <div className="stat-item">
                               <span className="stat-label">Hours</span>
-                              <span className="stat-value">{volunteer.hoursContributed}</span>
+                              <span className="stat-value">
+                                {volunteer.hoursContributed}
+                              </span>
                             </div>
                             <div className="stat-item">
                               <span className="stat-label">Projects</span>
-                              <span className="stat-value">{volunteer.projectsCount}</span>
+                              <span className="stat-value">
+                                {volunteer.projectsCount}
+                              </span>
                             </div>
                           </div>
                           <div className="volunteer-actions">
@@ -494,57 +600,65 @@ function NGODashboard() {
               {activeTab === "applications" && (
                 <div className="dashboard-section">
                   <h2 className="section-title">Volunteer Applications</h2>
-                  
-                  {pendingVolunteers.length > 0 ? (
+
+                  {pendingApplications.length > 0 ? (
                     <div className="applications-list">
-                      {pendingVolunteers.map(volunteer => (
-                        <div key={volunteer.id} className="application-item">
+                      {pendingApplications.map((application) => (
+                        <div key={application.id} className="application-item">
                           <div className="application-header">
                             <div className="applicant-info">
                               <div className="applicant-avatar">
-                                {volunteer.name.charAt(0).toUpperCase()}
+                                {application.volunteerName
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
                               <div>
-                                <h3 className="applicant-name">{volunteer.name}</h3>
-                                <p className="applicant-email">{volunteer.email}</p>
+                                <h3 className="applicant-name">
+                                  {application.volunteerName}
+                                </h3>
+                                <p className="applicant-project">
+                                  Applied to: {application.projectTitle}
+                                </p>
                               </div>
                             </div>
-                            <span className="application-project">{volunteer.projectName}</span>
+                            <span
+                              className={`application-status status-${application.status.toLowerCase()}`}
+                            >
+                              {application.status}
+                            </span>
                           </div>
-                          
+
                           <div className="application-details">
                             <div className="detail-item">
                               <span className="detail-label">Applied On:</span>
                               <span className="detail-value">
-                                {new Date(volunteer.applicationDate).toLocaleDateString()}
+                                {new Date(
+                                  application.appliedAt
+                                ).toLocaleDateString()}
                               </span>
                             </div>
-                            <div className="detail-item">
-                              <span className="detail-label">Skills:</span>
-                              <div className="skills-tags">
-                                {volunteer.skills.map((skill, index) => (
-                                  <span key={index} className="tag tag-blue">
-                                    {skill}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">Motivation:</span>
-                              <p className="motivation-text">{volunteer.motivation}</p>
-                            </div>
                           </div>
-                          
+
                           <div className="application-actions">
-                            <button 
+                            <button
                               className="approve-btn"
-                              onClick={() => handleVolunteerStatusChange(volunteer.id, 'Approved')}
+                              onClick={() =>
+                                handleApplicationStatusChange(
+                                  application.id,
+                                  "APPROVED"
+                                )
+                              }
                             >
                               <i className="fas fa-check"></i> Approve
                             </button>
-                            <button 
+                            <button
                               className="reject-btn"
-                              onClick={() => handleVolunteerStatusChange(volunteer.id, 'Rejected')}
+                              onClick={() =>
+                                handleApplicationStatusChange(
+                                  application.id,
+                                  "REJECTED"
+                                )
+                              }
                             >
                               <i className="fas fa-times"></i> Reject
                             </button>

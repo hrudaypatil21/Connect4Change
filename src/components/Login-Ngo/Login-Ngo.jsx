@@ -3,11 +3,12 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import { API_BASE_URL } from '../../config/api';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import './Login-Ngo.css';
 
 const LoginNgo = () => {
   const navigate = useNavigate();
-  const { loginNgo, updateAuthUser } = useAuth(); // Changed from login to loginNgo
+  const { updateAuthUser } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: ""
@@ -30,10 +31,17 @@ const LoginNgo = () => {
   
     try {
       // 1. Authenticate with Firebase
-      const userCredential = await loginNgo(formData.email, formData.password);
+      const auth = getAuth();
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      
+      // 2. Get the ID token
       const firebaseToken = await userCredential.user.getIdToken();
   
-      // 2. Verify with backend
+      // 3. Verify with backend and get complete NGO profile
       const response = await axios.post(
         `${API_BASE_URL}/api/login-ngo`,
         { email: formData.email },
@@ -45,11 +53,11 @@ const LoginNgo = () => {
         }
       );
   
-      // 3. Store complete user data
+      // 4. Store complete user data with explicit type
       const userData = {
         ...response.data,
         uid: userCredential.user.uid,
-        email: formData.email,
+        email: userCredential.user.email,
         token: firebaseToken,
         type: 'ngo' // Explicit type
       };
@@ -57,7 +65,7 @@ const LoginNgo = () => {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('token', firebaseToken);
       
-      // 4. Update context and redirect
+      // 5. Update context and redirect
       updateAuthUser(userData);
       navigate("/ngo-dashboard");
       
@@ -68,6 +76,7 @@ const LoginNgo = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="login-container">
       <form className="login-form" onSubmit={handleSubmit}>

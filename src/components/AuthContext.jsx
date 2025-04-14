@@ -12,19 +12,106 @@ import { API_BASE_URL } from '../config/api';
 
 const AuthContext = createContext();
 
+// Create axios instance with interceptors for automatic token refresh
+const createAuthenticatedAxios = (getFreshToken, logout) => {
+  const instance = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+
+  // Use interceptors to handle token management
+  instance.interceptors.request.use(async (config) => {
+    // Get token from localStorage on each request
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  }, (error) => {
+    return Promise.reject(error);
+  });
+
+  // Response interceptor for handling 401 errors
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      
+      // If error is 401 and not a retry and not a login endpoint
+      if (error.response?.status === 401 && 
+          !originalRequest._retry && 
+          !originalRequest.url?.includes('login')) {
+        originalRequest._retry = true;
+        
+        try {
+          // Try to get fresh token
+          const newToken = await getFreshToken();
+          
+          if (!newToken) {
+            // If no token available, logout and reject
+            logout();
+            return Promise.reject(new Error('Authentication failed'));
+          }
+          
+          // Update token in request and retry
+          originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+          return axios(originalRequest);
+        } catch (refreshError) {
+          // If refresh fails, logout and reject
+          logout();
+          return Promise.reject(refreshError);
+        }
+      }
+      
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem('user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
   const [loading, setLoading] = useState(true);
+  
+  // Define logout first since it's used in createAuthenticatedAxios
+  const logout = useCallback(async () => {
+    setLoading(true);
+    try {
+      await signOut(auth);
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const getFreshToken = useCallback(async () => {
     try {
       if (!auth.currentUser) return null;
       
       // Force token refresh
-      const token = await auth.currentUser.getIdToken(true);
+      const token = await getIdToken(auth.currentUser, true);
+      
+      // Update token in localStorage
+      localStorage.setItem('token', token);
+      
+      // Update user state with new token
+      setUser(prev => {
+        if (prev) {
+          const updated = { ...prev, token };
+          localStorage.setItem('user', JSON.stringify(updated));
+          return updated;
+        }
+        return prev;
+      });
+      
       return token;
     } catch (error) {
       console.error("Error refreshing token:", error);
@@ -32,91 +119,78 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const updateAuthUser = (userData) => {
+  // Create authenticated axios instance
+  const api = createAuthenticatedAxios(getFreshToken, logout);
+
+  const updateAuthUser = useCallback((userData) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
     if (userData?.token) {
       localStorage.setItem('token', userData.token);
     }
-  };
+  }, []);
 
-  // Separate profile fetchers
-  const fetchNgoProfile = async (firebaseUser) => {
-    const token = await firebaseUser.getIdToken(true);
+  // Fixed profile fetchers
+  const fetchNgoProfile = useCallback(async (firebaseUser) => {
+    const token = await getIdToken(firebaseUser, true);
 
-    const [profileResponse, ngoResponse] = await Promise.all([
-      axios.get(`${API_BASE_URL}/api/user-profile`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }),
-      axios.get(`${API_BASE_URL}/api/ngo-profile`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-    ]);
+    try {
+      const [profileResponse, ngoResponse] = await Promise.all([
+        api.get('/api/user-profile'),
+        api.get('/api/ngo-profile')
+      ]);
+      
+      return {
+        ...profileResponse.data,
+        ...ngoResponse.data,
+        token,
+        type: 'ngo',
+        id: firebaseUser.uid,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email
+      };
+    } catch (error) {
+      console.error("Error fetching NGO profile:", error);
+      throw error;
+    }
+  }, []);
+
+  const fetchIndividualProfile = useCallback(async (firebaseUser) => {
+    const token = await getIdToken(firebaseUser, true);
     
-    return {
-      ...profileResponse.data,
-      ...ngoResponse.data,
-      token,
-      type: 'ngo',
-      id: uid
-    };
-  };
+    try {
+      const response = await api.get('/api/user-profile');
+      
+      return {
+        ...response.data,
+        token,
+        type: 'individual',
+        id: firebaseUser.uid,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email
+      };
+    } catch (error) {
+      console.error("Error fetching individual profile:", error);
+      throw error;
+    }
+  }, []);
 
-  const fetchIndividualProfile = async (token, uid) => {
-    const response = await axios.get(`${API_BASE_URL}/api/user-profile`, {
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    return {
-      ...response.data,
-      token,
-      type: 'individual',
-      id: uid
-    };
-  };
-
-  
-
-  // Separate login functions
+  // Login functions remain mostly the same
   const loginNgo = async (email, password) => {
-    setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
       
-      const response = await axios.post(
-        `${API_BASE_URL}/api/login-ngo`,
-        {},
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
+      return {
+        user: {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          token,
+          type: 'ngo' // Explicitly set type
         }
-      );
-      
-      const userData = {
-        ...response.data,
-        uid: userCredential.user.uid,
-        email: userCredential.user.email,
-        token,
-        type: 'ngo', // THIS IS CRUCIAL
-        id: response.data.id || userCredential.user.uid
       };
-      
-      updateAuthUser(userData);
-      return userCredential;
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      throw error;
     }
   };
   
@@ -124,17 +198,12 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
+      const token = await getIdToken(userCredential.user, true);
+      localStorage.setItem('token', token);
       
-      const response = await axios.post(
-        `${API_BASE_URL}/api/login-individual`,
-        {},
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
+      const response = await api.post(
+        '/api/login-individual',
+        {}
       );
       
       const userData = {
@@ -153,22 +222,17 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // Separate signup functions
+  // Signup functions with api instance
   const signupNgo = async (email, password, ngoData) => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
+      const token = await getIdToken(userCredential.user, true);
+      localStorage.setItem('token', token);
       
-      const response = await axios.post(
-        `${API_BASE_URL}/api/register-ngo`,
-        { ...ngoData, uid: userCredential.user.uid },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
+      const response = await api.post(
+        '/api/register-ngo',
+        { ...ngoData, uid: userCredential.user.uid }
       );
       
       const userData = {
@@ -190,17 +254,12 @@ export function AuthProvider({ children }) {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const token = await userCredential.user.getIdToken();
+      const token = await getIdToken(userCredential.user, true);
+      localStorage.setItem('token', token);
       
-      const response = await axios.post(
-        `${API_BASE_URL}/api/register-individual`,
-        { ...individualData, uid: userCredential.user.uid },
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          } 
-        }
+      const response = await api.post(
+        '/api/register-individual',
+        { ...individualData, uid: userCredential.user.uid }
       );
       
       const userData = {
@@ -218,52 +277,54 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = async () => {
-    setLoading(true);
-    try {
-      await signOut(auth);
-      setUser(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const token = await getFreshToken();
+          // Get fresh token
+          const token = await getIdToken(firebaseUser, true);
           if (!token) throw new Error('No token available');
           
-          // Determine user type from existing stored data or fetch fresh
+          localStorage.setItem('token', token);
+          
+          // Determine user type from existing stored data
           const storedUser = JSON.parse(localStorage.getItem('user'));
           let userData;
           
-          if (storedUser?.type === 'ngo') {
-            userData = await fetchNgoProfile(token, firebaseUser.uid);
-          } else {
-            userData = await fetchIndividualProfile(token, firebaseUser.uid);
+          try {
+            if (storedUser?.type === 'ngo') {
+              userData = await fetchNgoProfile(firebaseUser);
+            } else {
+              userData = await fetchIndividualProfile(firebaseUser);
+            }
+            
+            updateAuthUser(userData);
+          } catch (profileError) {
+            console.error('Profile fetch failed:', profileError);
+            
+            // If profile fetch fails but we have stored user data with valid token,
+            // use that as a fallback
+            if (storedUser) {
+              updateAuthUser({...storedUser, token});
+            } else {
+              throw profileError;
+            }
           }
-          
-          updateAuthUser(userData);
         } catch (error) {
           console.error('Authentication failed:', error);
-          setUser(null);
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
+          logout();
+        } finally {
+          setLoading(false);
         }
       } else {
-        setUser(null);
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+        logout();
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
+  }, [fetchNgoProfile, fetchIndividualProfile, logout]);
 
   const value = {
     user,
@@ -274,7 +335,8 @@ export function AuthProvider({ children }) {
     logout,
     updateAuthUser,
     loading,
-    getFreshToken
+    getFreshToken,
+    api
   };
 
   return (

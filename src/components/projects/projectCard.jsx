@@ -17,8 +17,8 @@ const ProjectCard = ({ project }) => {
   const formatDate = (dateString) => {
     if (!dateString) return "TBD";
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -27,8 +27,8 @@ const ProjectCard = ({ project }) => {
   return (
     <div className="project-card">
       <div className="project-image">
-        <img 
-          src={project.image } 
+        <img
+          src={project.image}
           alt={project.title}
           onError={(e) => {
             e.target.src = "/images/default-project.jpg"; // Fallback image
@@ -36,17 +36,26 @@ const ProjectCard = ({ project }) => {
         />
         <div className="project-status">{project.status || "UPCOMING"}</div>
       </div>
-      
+     
       <div className="project-content">
         <h3 className="project-title">{project.title}</h3>
-        <p className="project-description">{project.description}</p>
         
+        {/* Add NGO name if available */}
+        {project.ngoName && (
+          <div className="project-ngo">
+            <span className="ngo-label">Organized by:</span>
+            <span className="ngo-name">{project.ngoName}</span>
+          </div>
+        )}
+        
+        <p className="project-description">{project.description}</p>
+       
         <div className="project-details">
           <div className="project-detail">
             <span className="detail-label">Location:</span>
             <span className="detail-value">{project.location || "Multiple locations"}</span>
           </div>
-          
+         
           <div className="project-detail">
             <span className="detail-label">Dates:</span>
             <span className="detail-value">
@@ -54,7 +63,7 @@ const ProjectCard = ({ project }) => {
             </span>
           </div>
         </div>
-        
+       
         {project.skills && project.skills.length > 0 && (
           <div className="project-skills">
             <span className="skills-label">Skills needed:</span>
@@ -70,7 +79,7 @@ const ProjectCard = ({ project }) => {
             </div>
           </div>
         )}
-        
+       
         <div className="volunteers-section">
           <div className="volunteers-header">
             <span>Volunteers</span>
@@ -79,13 +88,13 @@ const ProjectCard = ({ project }) => {
             </span>
           </div>
           <div className="progress-container">
-            <div 
-              className="progress-bar" 
+            <div
+              className="progress-bar"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
         </div>
-        
+       
         <div className="project-actions">
           <button className="action-button primary">View Details</button>
           <button className="action-button secondary">Join Project</button>

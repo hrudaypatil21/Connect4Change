@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import ProjectCard from "./projectCard";
 import { useAuth } from "../AuthContext";
 import axios from "axios";
-import { API_BASE_URL } from "../../config/api";
+import { API_BASE_URL } from "../../config/api"; // Adjust the import based on your project structure
 import "./Projects.css";
 
 export default function Projects() {
@@ -10,7 +10,7 @@ export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user, getFreshToken } = useAuth();
+  const { api, user  } = useAuth(); 
 
   useEffect(() => {
     const fetchAllProjects = async () => {
@@ -18,53 +18,39 @@ export default function Projects() {
       setError(null);
       
       try {
-        // Get fresh token
-        const token = await getFreshToken();
-        if (!token) {
-          throw new Error("No authentication token available");
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/api/projects`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+        // Create a new axios instance without auth headers for public requests
+        const publicApi = axios.create({
+          baseURL: API_BASE_URL
         });
         
-        // Randomize project order
+        const response = await publicApi.get('/api/projects');
         const randomizedProjects = [...response.data].sort(() => Math.random() - 0.5);
         setProjects(randomizedProjects);
       } catch (err) {
         console.error("Error fetching projects:", err);
-        setError(err.response?.data?.message || "Failed to load projects. Please try again.");
-        
-        // If unauthorized, suggest re-login
-        if (err.response?.status === 401) {
-          setError("Session expired. Please login again.");
+        if (err.response?.status === 403) {
+          setError("You don't have permission to view projects");
+        } else {
+          setError(err.response?.data?.message || "Failed to load projects. Please try again.");
         }
       } finally {
         setIsLoading(false);
       }
     };
-
-    // Only fetch if user is authenticated
-    if (user) {
-      fetchAllProjects();
-    } else {
-      setError("Please login to view projects");
-      setIsLoading(false);
-    }
-  }, [user, getFreshToken]);
-
+    
+    fetchAllProjects();
+}, [api]);
+  
   const filteredProjects = projects.filter((project) => {
     if (!searchTerm.trim()) return true;
-    
+   
     const searchLower = searchTerm.toLowerCase();
     return (
-      project.title.toLowerCase().includes(searchLower) ||
-      project.description.toLowerCase().includes(searchLower) ||
-      project.location.toLowerCase().includes(searchLower) ||
-      (project.skills && project.skills.some(skill => skill.toLowerCase().includes(searchLower)))
+      project.title?.toLowerCase().includes(searchLower) ||
+      project.description?.toLowerCase().includes(searchLower) ||
+      project.location?.toLowerCase().includes(searchLower) ||
+      (project.skills && project.skills.some(skill => skill.toLowerCase().includes(searchLower))) ||
+      (project.ngoName && project.ngoName.toLowerCase().includes(searchLower))
     );
   });
 
@@ -95,7 +81,6 @@ export default function Projects() {
           )}
         </div>
       </div>
-
       {isLoading ? (
         <div className="loading-spinner"></div>
       ) : error ? (
@@ -103,7 +88,7 @@ export default function Projects() {
       ) : filteredProjects.length === 0 ? (
         <div className="no-projects">
           <p>
-            {searchTerm 
+            {searchTerm
               ? "No projects match your search. Try different keywords."
               : "There are currently no projects available."}
           </p>
