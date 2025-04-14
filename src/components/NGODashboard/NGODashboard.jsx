@@ -47,9 +47,9 @@ function NGODashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.type !== 'ngo') {
-          navigate('/login-ngo');
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || user.type !== "ngo") {
+          navigate("/login-ngo");
           return;
         }
 
@@ -61,7 +61,7 @@ function NGODashboard() {
           `${API_BASE_URL}/api/ngo-profile/${identifier}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
@@ -90,18 +90,29 @@ function NGODashboard() {
           `${API_BASE_URL}/api/projects/ngo/${profileResponse.data.id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
+
+        const activeProjects = projectsResponse.data.filter(
+          (project) =>
+            project.status === "UPCOMING" || project.status === "ACTIVE"
+        );
+        const completedProjects = projectsResponse.data.filter(
+          (project) => project.status === "COMPLETED"
+        );
+
+        setActiveProjects(activeProjects);
+        setCompletedProjects(completedProjects);
 
         // Rest of your data fetching...
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
         if (error.response?.status === 403) {
-          localStorage.removeItem('user');
-          localStorage.removeItem('token');
-          navigate('/login-ngo');
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+          navigate("/login-ngo");
         }
       } finally {
         setIsLoading(false);
@@ -437,83 +448,63 @@ function NGODashboard() {
                   </div>
 
                   {activeProjects.length > 0 ? (
-                    <div className="projects-list">
+                    <div className="projects-grid">
                       {activeProjects.map((project) => (
-                        <div key={project.id} className="project-item">
-                          <div className="project-header">
-                            <h3 className="project-title">{project.title}</h3>
+                        <div key={project.id} className="project-card">
+                          <div className="project-card-header">
+                            <h3>{project.title}</h3>
                             <span
-                              className={`project-status status-${project.status.toLowerCase()}`}
+                              className={`status-badge ${project.status.toLowerCase()}`}
                             >
                               {project.status}
                             </span>
                           </div>
-
-                          <div className="project-description">
-                            <p>{project.description}</p>
-                          </div>
-
+                          <p className="project-description">
+                            {project.description}
+                          </p>
                           <div className="project-details">
                             <div className="detail-item">
-                              <span className="detail-label">
-                                <i className="fas fa-calendar"></i> Timeline:
-                              </span>
-                              <span className="detail-value">
+                              <i className="fas fa-map-marker-alt"></i>
+                              <span>{project.location}</span>
+                            </div>
+                            <div className="detail-item">
+                              <i className="fas fa-calendar-alt"></i>
+                              <span>
                                 {new Date(
-                                  project.startDate
+                                  project.startedAt
                                 ).toLocaleDateString()}{" "}
                                 -{" "}
-                                {new Date(project.endDate).toLocaleDateString()}
-                              </span>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">
-                                <i className="fas fa-map-marker-alt"></i>{" "}
-                                Location:
-                              </span>
-                              <span className="detail-value">
-                                {project.location}
-                              </span>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">
-                                <i className="fas fa-users"></i> Volunteers:
-                              </span>
-                              <span className="detail-value">
-                                {project.volunteersEnrolled}/
-                                {project.volunteersNeeded}
+                                {project.endedAt
+                                  ? new Date(
+                                      project.endedAt
+                                    ).toLocaleDateString()
+                                  : "Ongoing"}
                               </span>
                             </div>
                           </div>
-
-                          <div className="project-progress">
-                            <div className="progress-header">
-                              <span className="progress-label">
-                                Project Progress
+                          <div className="project-skills">
+                            {project.skills.slice(0, 3).map((skill, index) => (
+                              <span key={index} className="skill-tag">
+                                {skill}
                               </span>
-                              <span className="progress-value">
-                                {project.progress}%
+                            ))}
+                            {project.skills.length > 3 && (
+                              <span className="skill-tag">
+                                +{project.skills.length - 3} more
                               </span>
-                            </div>
-                            <div className="progress-bar">
-                              <div
-                                className="progress-fill"
-                                style={{ width: `${project.progress}%` }}
-                              ></div>
-                            </div>
+                            )}
                           </div>
-
                           <div className="project-actions">
-                            <button className="project-action-btn">
-                              <i className="fas fa-chart-line"></i> View
-                              Analytics
-                            </button>
-                            <button className="project-action-btn">
-                              <i className="fas fa-users"></i> Manage Volunteers
-                            </button>
-                            <button className="project-action-btn">
-                              <i className="fas fa-edit"></i> Edit Project
-                            </button>
+                            <Link to={`/projects/${project.id}`}>
+                              <button className="view-button">
+                                View Details
+                              </button>
+                            </Link>
+                            <Link to={`/projects/${project.id}/edit`}>
+                              <button className="edit-button">
+                                Edit Project
+                              </button>
+                            </Link>
                           </div>
                         </div>
                       ))}
