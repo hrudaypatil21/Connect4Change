@@ -101,6 +101,21 @@
   margin-bottom: 16px;
 }
 
+.pending-count {
+  color: #ff9800;
+  font-size: 0.8em;
+  margin-left: 5px;
+}
+
+.action-button.primary.applied {
+  background-color: #4caf50;
+  cursor: default;
+}
+
+.action-button.primary.applied:hover {
+  background-color: #4caf50;
+}
+
 .volunteers-header {
   display: flex;
   justify-content: space-between;

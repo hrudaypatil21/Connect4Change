@@ -1,25 +1,25 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { useAuth } from "../AuthContext";
-import "./Login_Individual.css";
+import React, { useState } from 'react';
+import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
 import { API_BASE_URL } from '../../config/api';
+import "./Login_Individual.css";
 
 const LoginIndividual = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { loginIndividual, updateAuthUser } = useAuth(); // Correct hook usage inside component
   const [formData, setFormData] = useState({
     email: "",
-    password: ""
+    password: "",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -27,34 +27,43 @@ const LoginIndividual = () => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
-    
+  
     try {
+      // 1. Firebase authentication
+      const userCredential = await loginIndividual(formData.email, formData.password, 'individual');
+      const firebaseToken = await userCredential.user.getIdToken();
+  
+      // 2. Backend verification
       const response = await axios.post(
         `${API_BASE_URL}/api/login-individual`,
-        JSON.stringify(formData), // Explicitly stringify
+        {}, // Empty body
         {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          withCredentials: true
+          headers: { 
+            'Authorization': `Bearer ${firebaseToken}`,
+            'Content-Type': 'application/json'
+          }
         }
       );
+  
+      // 3. Store user data
+      const userData = {
+        ...response.data,
+        token: firebaseToken,
+        type: 'individual'
+      };
       
-      const token = response.headers['authorization']?.split(' ')[1];
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('token', firebaseToken);
       
-      if (!token) {
-        throw new Error("No authentication token received");
-      }
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(response.data));
-      login(response.data, token, "individual");
+      // 4. Update auth context
+      updateAuthUser(userData);
+  
+      // 5. Redirect to dashboard
       navigate("/volunteer-dashboard");
+      
     } catch (err) {
       console.error("Login error:", err);
-      setError(
-        err.response?.data?.message || 
-        "Login failed. Please check your credentials"
-      );
+      setError(err.response?.data?.message || err.message || "Login failed");
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +96,7 @@ const LoginIndividual = () => {
           {isLoading ? "Logging in..." : "Login"}
         </button>
         <div className="login-link">
-          Don't have an account? <a href="/individual-registration">Register</a>
+          Don't have an account? <Link to="/individual-registration">Register here</Link>
         </div>
       </form>
     </div>

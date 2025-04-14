@@ -1,10 +1,13 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
 import axios from "axios";
-import { Link, useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from "../../config/api";
 import "./NGORegistration.css";
 
 const NGORegistration = () => {
   const navigate = useNavigate();
+  const { signup } = useAuth();
 
   const [formData, setFormData] = useState({
     orgName: "",
@@ -14,7 +17,7 @@ const NGORegistration = () => {
     address: "",
     mission: "",
     website: "",
-    volNeeds: [], 
+    volNeeds: [],
     password: "",
     confirmPassword: "",
   });
@@ -25,17 +28,17 @@ const NGORegistration = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
+    setFormData((prevState) => ({
       ...prevState,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleVolNeedsChange = (e) => {
-    const volNeedsArray = e.target.value.split(',').map(need => need.trim());
-    setFormData(prevState => ({
+    const volNeedsArray = e.target.value.split(",").map((need) => need.trim());
+    setFormData((prevState) => ({
       ...prevState,
-      volNeeds: volNeedsArray
+      volNeeds: volNeedsArray,
     }));
   };
 
@@ -45,22 +48,21 @@ const NGORegistration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords don't match!");
+      setIsLoading(false);
       return;
     }
-    
+
     try {
-      setIsLoading(true);
-
-
       const formDataToSend = new FormData();
+
       formDataToSend.append("orgName", formData.orgName);
       formDataToSend.append("email", formData.email);
       formDataToSend.append("regNumber", formData.regNumber);
-      formDataToSend.append("password", formData.password);
       formDataToSend.append("phone", formData.phone || "");
       formDataToSend.append("address", formData.address || "");
       formDataToSend.append("mission", formData.mission || "");
@@ -69,24 +71,25 @@ const NGORegistration = () => {
 
       if (verificationDocs) {
         formDataToSend.append("verificationDocs", verificationDocs);
+        
       }
+      formDataToSend.append("password", formData.password);
 
-      const response = await axios.post('http://localhost:8081/api/register-ngo', formDataToSend, {
+      // 3. Register NGO in your backend
+      const response = await axios.post(
+        `${API_BASE_URL}/api/register-ngo`,
+        formDataToSend,
+        {
           headers: {
-            "Content-Type": "multipart/form-data",
-          }, 
-          transformRequest: (data) => data
-        });
-      // Store NGO data properly
-      localStorage.setItem('ngo', JSON.stringify(response.data));
-      localStorage.setItem('userType', 'ngo');
-      
-      // Navigate programmatically after successful registration
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
       navigate("/ngo-dashboard");
-      
     } catch (error) {
-      console.error("Registration error:", error.response?.data);
-      setError(error.response?.data?.error || 'Registration failed. Please check your details and try again.');
+      console.error("Registration error:", error);
+      setError(error.response?.data?.message || error.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
@@ -102,21 +105,28 @@ const NGORegistration = () => {
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="orgName">Organization Name*</label>
-            <input 
-              type="text" 
-              id="orgName" 
-              name="orgName" 
+            <input
+              type="text"
+              id="orgName"
+              name="orgName"
               value={formData.orgName}
-              onChange={handleChange} 
-              placeholder="Enter your org name" 
+              onChange={handleChange}
+              placeholder="Enter your org name"
               required
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="regNumber">Registration Number*</label>
-            <input type="text" id="regNumber" name="regNumber" value={formData.regNumber} 
-            onChange={handleChange} placeholder="Enter your reg number" required/>
+            <input
+              type="text"
+              id="regNumber"
+              name="regNumber"
+              value={formData.regNumber}
+              onChange={handleChange}
+              placeholder="Enter your reg number"
+              required
+            />
           </div>
 
           <div className="form-group">
@@ -127,7 +137,8 @@ const NGORegistration = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Enter your email" required
+              placeholder="Enter your email"
+              required
             />
           </div>
 
@@ -139,7 +150,8 @@ const NGORegistration = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="Enter phone number" required
+              placeholder="Enter phone number"
+              required
             />
           </div>
 
@@ -151,7 +163,8 @@ const NGORegistration = () => {
               name="address"
               value={formData.address}
               onChange={handleChange}
-              placeholder="Enter address" required
+              placeholder="Enter address"
+              required
             />
           </div>
 
@@ -162,7 +175,8 @@ const NGORegistration = () => {
               name="mission"
               value={formData.mission}
               onChange={handleChange}
-              placeholder="Describe your mission" required
+              placeholder="Describe your mission"
+              required
             />
           </div>
 
@@ -174,7 +188,7 @@ const NGORegistration = () => {
               name="website"
               value={formData.website}
               onChange={handleChange}
-              placeholder="Enter website URL" 
+              placeholder="Enter website URL"
             />
           </div>
 
@@ -185,7 +199,7 @@ const NGORegistration = () => {
               type="text"
               id="volNeeds"
               name="volNeeds"
-              value={formData.volNeeds.join(', ')}
+              value={formData.volNeeds.join(", ")}
               onChange={handleVolNeedsChange}
               placeholder="teaching, mentoring, cleaning, etc."
             />
@@ -211,7 +225,9 @@ const NGORegistration = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Create a password" required minLength="8"
+              placeholder="Create a password"
+              required
+              minLength="8"
             />
           </div>
 
@@ -224,18 +240,18 @@ const NGORegistration = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm your password" required minLength="8"
+              placeholder="Confirm your password"
+              required
+              minLength="8"
             />
           </div>
-          <Link to="/ngo-dashboard">  
           <button
             type="submit"
-            className="submit-button"
+            className="submit-button individual-button"
             disabled={isLoading}
           >
-            {isLoading ? "Registering..." : "Register Organization"}
+            {isLoading ? "Registering..." : "Create Account"}
           </button>
-          </Link>
         </form>
         <div className="login-link">
           Already have an account? <Link to="/login-ngo">Log in</Link>

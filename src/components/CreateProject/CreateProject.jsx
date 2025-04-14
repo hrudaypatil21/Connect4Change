@@ -1,30 +1,41 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate if using React Router
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../AuthContext";
+import { getAuth } from "firebase/auth";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import "./CreateProject.css";
 
 const CreateProject = () => {
-  const navigate = useNavigate(); // Initialize useNavigate hook if using React Router
-  
+  const navigate = useNavigate();
+  const { user, getFreshToken } = useAuth(); // Destructure getFreshToken
+  const [skillsInput, setSkillsInput] = useState("");
   const [projectData, setProjectData] = useState({
     title: "",
     description: "",
-    startDate: "",
-    endDate: "",
+    startedAt: "",
+    endedAt: "",
     location: "",
-    sdgs: [],
-    status: "Planning",
-    volunteersRequired: 0
+    skills: [],
+    status: "UPCOMING",
+    ngoId: null
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const availableSdgs = [
-    { id: "SDG 1", name: "No Poverty" },
-    { id: "SDG 2", name: "Zero Hunger" },
-    { id: "SDG 3", name: "Good Health and Well-being" },
-    { id: "SDG 4", name: "Quality Education" },
-    { id: "SDG 5", name: "Gender Equality" },
-    { id: "SDG 9", name: "Industry, Innovation and Infrastructure" },
-    { id: "SDG 17", name: "Partnerships for the Goals" }
-  ];
+  const auth = getAuth(); 
+
+useEffect(() => {
+    if (user?.type !== 'ngo') {
+      navigate('/');
+    } else {
+      setProjectData(prev => ({
+        ...prev,
+        ngoId: user.id
+      }));
+    }
+  }, [user, navigate]);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -34,69 +45,68 @@ const CreateProject = () => {
     });
   };
 
-  const handleSdgToggle = (sdgId) => {
-    if (projectData.sdgs.includes(sdgId)) {
+  const handleSkillAdd = () => {
+    if (skillsInput.trim() && !projectData.skills.includes(skillsInput.trim())) {
       setProjectData({
         ...projectData,
-        sdgs: projectData.sdgs.filter(id => id !== sdgId)
+        skills: [...projectData.skills, skillsInput.trim()]
       });
-    } else {
-      setProjectData({
-        ...projectData,
-        sdgs: [...projectData.sdgs, sdgId]
-      });
+      setSkillsInput("");
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const newProject = {
+  const handleSkillRemove = (skillToRemove) => {
+    setProjectData({
       ...projectData,
-      id: Date.now(),
-      progress: 0,
-      volunteers: {
-        required: parseInt(projectData.volunteersRequired),
-        enrolled: 0,
-        pending: 0
-      }
-    };
+      skills: projectData.skills.filter(skill => skill !== skillToRemove)
+    });
+  };
 
-    // Save the new project to localStorage
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+  
     try {
-      // Get existing projects
-      const existingProjects = localStorage.getItem("projects");
-      let projects = [];
-      
-      if (existingProjects) {
-        projects = JSON.parse(existingProjects);
-      }
-      
-      // Add the new project
-      projects.push(newProject);
-      
-      // Save updated projects list
-      localStorage.setItem("projects", JSON.stringify(projects));
-      
-      console.log("Project created and saved:", newProject);
-      
-      // Reset form
-      setProjectData({
-        title: "",
-        description: "",
-        startDate: "",
-        endDate: "",
-        location: "",
-        sdgs: [],
-        status: "Planning",
-        volunteersRequired: 0
-      });
-      
-      // Redirect to projects page if using React Router
-      navigate("/projects");
-      
+      const { getFreshToken } = useAuth();
+      const token = await getFreshToken();
+      if (!token) throw new Error('No authentication token found');
+  
+      const projectToCreate = {
+        title: projectData.title,
+        description: projectData.description,
+        status: projectData.status,
+        startedAt: projectData.startedAt ? `${projectData.startedAt}T00:00:00` : null,
+        endedAt: projectData.endedAt ? `${projectData.endedAt}T00:00:00` : null,
+        location: projectData.location,
+        skills: projectData.skills,
+        ngoId: user.id
+      };
+  
+      const response = await axios.post(
+        `${API_BASE_URL}/api/projects`,
+        projectToCreate,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+  
+      navigate("/ngo-dashboard");
     } catch (error) {
-      console.error("Error saving project:", error);
+      console.error("Project creation error:", error);
+      if (error.response?.status === 401) {
+        setError('Session expired. Please login again.');
+        navigate('/login');
+      } else if (error.response?.status === 403) {
+        setError('You can only create projects for your own NGO');
+      } else {
+        setError(error.response?.data?.error || error.message || 'Failed to create project');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -104,6 +114,7 @@ const CreateProject = () => {
     <div className="create-project-page">
       <div className="create-project-container">
         <h2>Create New Project</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="title">Project Title *</label>
@@ -133,26 +144,25 @@ const CreateProject = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="startDate">Start Date *</label>
+              <label htmlFor="startedAt">Start Date *</label>
               <input
                 type="date"
-                id="startDate"
-                name="startDate"
-                value={projectData.startDate}
+                id="startedAt"
+                name="startedAt"
+                value={projectData.startedAt}
                 onChange={handleChange}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="endDate">End Date *</label>
+              <label htmlFor="endedAt">End Date</label>
               <input
                 type="date"
-                id="endDate"
-                name="endDate"
-                value={projectData.endDate}
+                id="endedAt"
+                name="endedAt"
+                value={projectData.endedAt}
                 onChange={handleChange}
-                required
               />
             </div>
           </div>
@@ -179,50 +189,54 @@ const CreateProject = () => {
               onChange={handleChange}
               required
             >
-              <option className="dropdown-option" value="Planning">Planning</option>
-              <option className="dropdown-option" value="In Progress">In Progress</option>
-              <option className="dropdown-option" value="Completed">Completed</option>
+              <option value="UPCOMING">Upcoming</option>
+              <option value="ACTIVE">Active</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="CANCELLED">Cancelled</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label htmlFor="volunteersRequired">Volunteers Required *</label>
-            <input
-              type="number"
-              id="volunteersRequired"
-              name="volunteersRequired"
-              value={projectData.volunteersRequired}
-              onChange={handleChange}
-              required
-              min="1"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Sustainable Development Goals (SDGs) *</label>
-            <div className="sdgs-container">
-              {availableSdgs.map((sdg) => (
-                <div className="sdg-checkbox" key={sdg.id}>
-                  <input
-                    type="checkbox"
-                    id={`sdg-${sdg.id}`}
-                    checked={projectData.sdgs.includes(sdg.id)}
-                    onChange={() => handleSdgToggle(sdg.id)}
-                  />
-                  <label htmlFor={`sdg-${sdg.id}`}>
-                    {sdg.id}: {sdg.name}
-                  </label>
-                </div>
+            <label>Required Skills</label>
+            <div className="skills-input-container">
+              <input
+                type="text"
+                value={skillsInput}
+                onChange={(e) => setSkillsInput(e.target.value)}
+                placeholder="Add required skills"
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSkillAdd())}
+              />
+              <button 
+                type="button" 
+                className="add-skill-button"
+                onClick={handleSkillAdd}
+              >
+                Add Skill
+              </button>
+            </div>
+            <div className="skills-tags-container">
+              {projectData.skills.map((skill, index) => (
+                <span key={index} className="skill-tag">
+                  {skill}
+                  <button 
+                    type="button" 
+                    className="remove-skill"
+                    onClick={() => handleSkillRemove(skill)}
+                  >
+                    ×
+                  </button>
+                </span>
               ))}
             </div>
-            {projectData.sdgs.length === 0 && (
-              <p className="error-text">Please select at least one SDG</p>
-            )}
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="submit-button" disabled={projectData.sdgs.length === 0}>
-              Create Project
+            <button 
+              type="submit" 
+              className="submit-button"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>

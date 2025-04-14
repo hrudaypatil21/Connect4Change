@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./VolunteerDashboard.css";
+import { API_BASE_URL } from '../../config/api';
 
 function VolunteerDashboard() {
   const navigate = useNavigate();
@@ -19,33 +20,108 @@ function VolunteerDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Check if user is logged in
+        // Get user from localStorage
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user) {
           navigate('/login');
           return;
         }
 
-        // Fetch volunteer info
-        const volunteerResponse = await axios.get(`/api/individuals/${user.id}`);
-        setVolunteerInfo(volunteerResponse.data);
+        // Set basic volunteer info from stored data
+        setVolunteerInfo({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          location: user.location,
+          phone: user.phone,
+          address: user.address,
+          bio: user.bio,
+          skills: user.skills || [],
+          interests: user.interests || [],
+          availability: user.availability || '',
+          createdAt: user.createdAt || new Date().toISOString()
+        });
 
-        // Fetch projects data
-        const projectsResponse = await axios.get(`/api/projects/volunteer/${user.id}`);
-        setActiveProjects(projectsResponse.data.active);
-        setPastProjects(projectsResponse.data.past);
+        // Fetch additional data (mock data for demonstration)
+        setActiveProjects([
+          {
+            id: 1,
+            title: "Community Teaching Program",
+            ngo: "Education For All",
+            description: "Teaching basic math and science to underprivileged children",
+            status: "Active",
+            role: "Math Tutor",
+            startDate: "2023-05-01",
+            endDate: "2023-12-31",
+            location: "Local Community Center",
+            hoursContributed: 45,
+            hoursRequired: 100,
+            nextTask: "Prepare lesson plan for next week",
+            nextTaskDeadline: "2023-11-15",
+            sdgs: ["Quality Education", "Reduced Inequalities"]
+          }
+        ]);
 
-        // Fetch recommended projects
-        const recommendedResponse = await axios.get(`/api/projects/recommended/${user.id}`);
-        setRecommendedProjects(recommendedResponse.data);
+        setPastProjects([
+          {
+            id: 2,
+            title: "Summer Reading Program",
+            ngo: "Literacy Foundation",
+            description: "Helping children improve their reading skills",
+            status: "Completed",
+            role: "Reading Mentor",
+            startDate: "2023-01-15",
+            endDate: "2023-04-30",
+            location: "City Library",
+            hoursContributed: 80,
+            impact: "Helped 25 children improve their reading level by at least one grade",
+            feedback: "John was an excellent mentor who showed great patience and creativity in engaging the children.",
+            sdgs: ["Quality Education"]
+          }
+        ]);
 
-        // Fetch notifications
-        const notificationsResponse = await axios.get(`/api/notifications/${user.id}`);
-        setNotifications(notificationsResponse.data);
+        setRecommendedProjects([
+          {
+            id: 3,
+            title: "Environmental Awareness Campaign",
+            ngo: "Green Earth Initiative",
+            description: "Educating communities about sustainable practices",
+            match: 85,
+            location: "Various locations",
+            timeCommitment: "5-10 hours/week",
+            startDate: "2023-11-20",
+            skillsNeeded: ["Public Speaking", "Environmental Science"],
+            matchReasons: [
+              "Matches your interest in environmental causes",
+              "Utilizes your public speaking skills",
+              "Fits your availability"
+            ],
+            sdgs: ["Climate Action", "Life on Land"]
+          }
+        ]);
 
-        // Fetch upcoming events
-        const eventsResponse = await axios.get(`/api/events/upcoming/${user.id}`);
-        setUpcomingEvents(eventsResponse.data);
+        setNotifications([
+          {
+            id: 1,
+            type: "message",
+            from: "Education For All",
+            fromRole: "Project Coordinator",
+            content: "Your teaching schedule has been updated for next week",
+            time: "2 hours ago",
+            unread: true
+          }
+        ]);
+
+        setUpcomingEvents([
+          {
+            id: 1,
+            title: "Volunteer Training Session",
+            date: "2023-11-20",
+            time: "10:00 AM - 12:00 PM",
+            location: "Community Center Room 3",
+            project: "Community Teaching Program"
+          }
+        ]);
 
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
@@ -63,18 +139,47 @@ function VolunteerDashboard() {
 
   const handleLogout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     navigate('/login');
   };
+
+  const [applications, setApplications] = useState([]);
+  
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.type !== 'individual') return;
+        
+        const response = await axios.get(
+          `${API_BASE_URL}/api/applications/volunteer/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+        setApplications(response.data);
+      } catch (err) {
+        console.error("Failed to fetch applications:", err);
+      }
+    };
+
+    fetchApplications();
+  }, []);
 
   const handleApplicationStatusChange = async (projectId, status) => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      await axios.put(`/api/projects/${projectId}/status`, { 
+      await axios.put(`${API_BASE_URL}/api/projects/${projectId}/status`, { 
         volunteerId: user.id, 
         status 
+      }, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
       });
       
-      // Update local state
       setActiveProjects(activeProjects.map(project => 
         project.id === projectId ? { ...project, status } : project
       ));
@@ -114,12 +219,12 @@ function VolunteerDashboard() {
               </div>
               <p className="volunteer-description">{volunteerInfo.bio || "Passionate volunteer making a difference"}</p>
               <div className="volunteer-tags">
-                {volunteerInfo.skills?.slice(0, 3).map((skill, index) => (
+                {volunteerInfo.skills.slice(0, 3).map((skill, index) => (
                   <span key={index} className="tag tag-blue">
                     {skill}
                   </span>
                 ))}
-                {volunteerInfo.skills?.length > 3 && (
+                {volunteerInfo.skills.length > 3 && (
                   <span className="tag tag-blue">+{volunteerInfo.skills.length - 3} more</span>
                 )}
               </div>
@@ -166,6 +271,18 @@ function VolunteerDashboard() {
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
+                      <i className="fas fa-home"></i> Address:
+                    </span>
+                    <span className="item-value">{volunteerInfo.address || "Not specified"}</span>
+                  </li>
+                  <li className="sidebar-item">
+                    <span className="item-label">
+                      <i className="fas fa-calendar-check"></i> Availability:
+                    </span>
+                    <span className="item-value">{volunteerInfo.availability || "Flexible"}</span>
+                  </li>
+                  <li className="sidebar-item">
+                    <span className="item-label">
                       <i className="fas fa-calendar"></i> Member Since:
                     </span>
                     <span className="item-value">
@@ -176,50 +293,55 @@ function VolunteerDashboard() {
               </div>
               
               <div className="sidebar-section">
+                <h3 className="sidebar-title">Interests & Skills</h3>
+                <div className="skills-interests-container">
+                  <div className="skills-section">
+                    <h4>Skills</h4>
+                    <div className="tags-container">
+                      {volunteerInfo.skills.map((skill, index) => (
+                        <span key={`skill-${index}`} className="tag tag-blue">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="interests-section">
+                    <h4>Interests</h4>
+                    <div className="tags-container">
+                      {volunteerInfo.interests.map((interest, index) => (
+                        <span key={`interest-${index}`} className="tag tag-purple">
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="sidebar-section">
                 <h3 className="sidebar-title">Impact Summary</h3>
                 <div className="stats-grid">
                   <div className="stat-card">
                     <span className="stat-value">
-                      {volunteerInfo.totalHours || 0}
+                      {activeProjects.reduce((sum, project) => sum + project.hoursContributed, 0) +
+                       pastProjects.reduce((sum, project) => sum + project.hoursContributed, 0)}
                     </span>
                     <span className="stat-label">Hours</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-value">
-                      {(activeProjects?.length || 0) + (pastProjects?.length || 0)}
+                      {activeProjects.length + pastProjects.length}
                     </span>
                     <span className="stat-label">Projects</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-value">
-                      {pastProjects?.length || 0}
+                      {pastProjects.length}
                     </span>
                     <span className="stat-label">Completed</span>
                   </div>
-                  <div className="stat-card">
-                    <span className="stat-value">
-                      {volunteerInfo.badges?.length || 0}
-                    </span>
-                    <span className="stat-label">Badges</span>
-                  </div>
                 </div>
               </div>
-              
-              {volunteerInfo.badges?.length > 0 && (
-                <div className="sidebar-section">
-                  <h3 className="sidebar-title">Badges & Recognition</h3>
-                  <div className="badges-list">
-                    {volunteerInfo.badges.map((badge, index) => (
-                      <div key={index} className="badge-item">
-                        <div className="badge-icon">
-                          <i className="fas fa-award"></i>
-                        </div>
-                        <span className="badge-name">{badge}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
               
               {upcomingEvents.length > 0 && (
                 <div className="sidebar-section">
@@ -256,83 +378,6 @@ function VolunteerDashboard() {
             
             {/* Main Dashboard Content */}
             <div className="dashboard-main">
-              {/* Notifications Section */}
-              {notifications.length > 0 && (
-                <section className="dashboard-section">
-                  <div className="section-header">
-                    <h2 className="section-title">Notifications</h2>
-                    <span className="notification-count">
-                      {notifications.filter(n => n.unread).length} new
-                    </span>
-                  </div>
-                  
-                  <div className="notifications-list">
-                    {notifications.map(notification => (
-                      <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
-                        <div className={`notification-icon ${notification.type}-icon`}>
-                          <i className={`fas fa-${notification.type === 'message' ? 'comment-alt' : 
-                                         notification.type === 'task' ? 'tasks' : 
-                                         notification.type === 'milestone' ? 'flag' : 'star'}`}></i>
-                        </div>
-                        
-                        <div className="notification-content">
-                          {notification.type === 'message' && (
-                            <div className="notification-header">
-                              <div className="notification-avatar">
-                                {notification.from.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <span className="notification-from">{notification.from}</span>
-                                <span className="notification-role">{notification.fromRole}</span>
-                              </div>
-                            </div>
-                          )}
-                          
-                          {(notification.type === 'task' || notification.type === 'milestone') && (
-                            <div className="notification-project">
-                              <i className="fas fa-project-diagram"></i> {notification.project}
-                            </div>
-                          )}
-                          
-                          {notification.type === 'feedback' && (
-                            <div className="notification-project">
-                              <i className="fas fa-building"></i> {notification.from}
-                            </div>
-                          )}
-                          
-                          <p className="notification-text">{notification.content}</p>
-                          
-                          {notification.type === 'task' && (
-                            <div className="notification-deadline">
-                              <i className="fas fa-calendar-alt"></i> {notification.deadline}
-                            </div>
-                          )}
-                          
-                          <div className="notification-footer">
-                            <span className="notification-time">{notification.time}</span>
-                            <div className="notification-actions">
-                              {notification.type === 'message' && (
-                                <button className="action-btn" title="Reply">
-                                  <i className="fas fa-reply"></i>
-                                </button>
-                              )}
-                              {notification.type === 'task' && (
-                                <button className="action-btn" title="View Task">
-                                  <i className="fas fa-eye"></i>
-                                </button>
-                              )}
-                              <button className="action-btn" title="Mark as Read">
-                                <i className="fas fa-check"></i>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-              
               {/* Projects Section */}
               <section className="dashboard-section">
                 <div className="section-header-with-tabs">
@@ -497,9 +542,6 @@ function VolunteerDashboard() {
                                 <i className="fas fa-calendar-alt"></i> Schedule
                               </button>
                               <button className="project-action-btn">
-                                <i className="fas fa-users"></i> Team
-                              </button>
-                              <button className="project-action-btn">
                                 <i className="fas fa-file-alt"></i> Log Hours
                               </button>
                             </>
@@ -627,10 +669,10 @@ function VolunteerDashboard() {
                                   <span 
                                     key={index} 
                                     className={`skill-tag ${
-                                      volunteerInfo.skills?.includes(skill) ? 'skill-match' : ''
+                                      volunteerInfo.skills.includes(skill) ? 'skill-match' : ''
                                     }`}
                                   >
-                                    {skill} {volunteerInfo.skills?.includes(skill) && (
+                                    {skill} {volunteerInfo.skills.includes(skill) && (
                                       <i className="fas fa-check"></i>
                                     )}
                                   </span>

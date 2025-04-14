@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './IndividualRegistration.css';
 import axios from 'axios';
+import { API_BASE_URL } from '../../config/api';
+import { useAuth } from '../AuthContext';
 
 const IndividualRegistration = () => {
   const navigate = useNavigate();
+  const { signup } = useAuth();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -54,17 +57,19 @@ const IndividualRegistration = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
-
+  
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords don't match!");
+      setIsLoading(false);
       return;
     }
-
+  
     try {
-      setIsLoading(true);
-      
       const formDataToSend = new FormData();
+      
+      // Append all fields
       formDataToSend.append('name', formData.name);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('password', formData.password);
@@ -72,27 +77,30 @@ const IndividualRegistration = () => {
       formDataToSend.append('phone', formData.phone || '');
       formDataToSend.append('address', formData.address || '');
       formDataToSend.append('bio', formData.bio || '');
+      
+      // Stringify arrays properly
       formDataToSend.append('skills', JSON.stringify(formData.skills));
-      formDataToSend.append('interests', JSON.stringify(formData.interests)); // Fixed from 'interests' to 'interest'
+      formDataToSend.append('interests', JSON.stringify(formData.interests));
       formDataToSend.append('availability', formData.availability);
-
+      
       if (resume) {
         formDataToSend.append('resume', resume);
       }
-
-      const response = await axios.post('http://localhost:8081/api/register-individual', formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        transformRequest: (data) => data
-      });
-
-      localStorage.setItem('user', JSON.stringify(response.data));
-      navigate('/volunteer-dashboard');
-      
-    } catch (err) {
-      console.error("Registration error:", err.response?.data);
-      setError(err.response?.data?.message || 'Registration failed. Please check your details and try again.');
+  
+      const response = await axios.post(
+        `${API_BASE_URL}/api/register-individual`,
+        formDataToSend,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+  
+      navigate("/volunteer-dashboard");
+    } catch (error) {
+      console.error("Registration error:", error);
+      setError(error.response?.data?.message || error.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }

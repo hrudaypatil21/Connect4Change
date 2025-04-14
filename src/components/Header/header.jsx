@@ -1,30 +1,94 @@
-import React from 'react';
-import {Link} from 'react-router-dom'; // Import Link from react-router-dom for navigation
-import './header.css'; // Import the CSS file for the header
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../AuthContext';
+import './header.css';
 
 const Header = () => {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const navigate = useNavigate();
+  const { user, logout } = useAuth(); // Changed from currentUser to user
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowDropdown(false);
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const toggleDropdown = () => {
+    setShowDropdown(!showDropdown);
+  };
+
+  // Safely get user display name
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    return user.name || user.orgName || 'User';
+  };
+
   return (
-    <nav class="navigation">
-    <div class="container nav-container">
-      <div class="logo-container">
-        <img src="/api/placeholder/40/40" alt="Logo" class="logo-image" />
-        <span class="logo-text">Connect4Change</span>
+    <nav className="navigation">
+      <div className="container nav-container">
+        <div className="logo-container">
+          <img src="/api/placeholder/40/40" alt="Logo" className="logo-image" />
+          <span className="logo-text">Connect4Change</span>
+        </div>
+        <div className="main-menu">
+          <Link to="/" className="nav-link">Home</Link>
+          <Link to="/projects" className="nav-link">Projects</Link>
+          <Link to="/projects-match" className="nav-link">Matching</Link>
+          <Link to="/ngos" className="nav-link">NGOs</Link>
+          <Link to="/volunteers-page" className="nav-link">Volunteers</Link>
+          <Link to="/sdg-cards" className="nav-link">About SDGs</Link>
+        </div>
+        <div className="nav-actions">
+          {user ? (
+            <div className="user-dropdown-container">
+              <button className="user-profile-button" onClick={toggleDropdown}>
+                <span className="user-avatar">
+                  {getUserDisplayName().charAt(0).toUpperCase()}
+                </span>
+                <span className="user-name">{getUserDisplayName()}</span>
+                <i className={`fas fa-chevron-${showDropdown ? 'up' : 'down'}`}></i>
+              </button>
+              {showDropdown && (
+                <div className="dropdown-menu">
+                  <Link 
+                    to={user.type === 'individual' ? '/volunteer-dashboard' : '/ngo-dashboard'} 
+                    className="dropdown-item"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <i className="fas fa-tachometer-alt"></i> Dashboard
+                  </Link>
+                  <Link 
+                    to="/profile" 
+                    className="dropdown-item"
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <i className="fas fa-user"></i> My Profile
+                  </Link>
+                  <button 
+                    className="dropdown-item logout-button"
+                    onClick={handleLogout}
+                  >
+                    <i className="fas fa-sign-out-alt"></i> Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/signin">
+              <button className="signin-button">Sign In</button>
+            </Link>
+          )}
+          <button className="mobile-menu-button">
+            <i className="fas fa-bars"></i>
+          </button>
+        </div>
       </div>
-      <div class="main-menu">
-        <a href="/" class="nav-link">Home</a>
-        <a href="/projects" class="nav-link">Projects</a>
-        <a href="/ngos" class="nav-link">NGOs</a>
-        <a href="/volunteers-page" class="nav-link">Volunteers</a>
-        <a href="/sdg-cards" class="nav-link">About SDGs</a>
-      </div>
-      <div class="nav-actions">
-       <Link to="/signin"> <button class="signin-button">Sign In</button></Link>
-        <button class="mobile-menu-button">
-          <i class="fas fa-bars"></i>
-        </button>
-      </div>
-    </div>
-  </nav>
+    </nav>
   );
 };
 

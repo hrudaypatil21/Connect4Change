@@ -1,103 +1,76 @@
 import React, { useState, useEffect } from "react";
-import ProjectCard from "./ProjectCard";
+import ProjectCard from "./projectCard";
+import { useAuth } from "../AuthContext";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import "./Projects.css";
 
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [projects, setProjects] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { user, getFreshToken } = useAuth();
 
-  // In a real app, you would fetch projects from your backend/API
-  // For now, we'll simulate loading projects from localStorage
   useEffect(() => {
-    // Load projects from localStorage or use demo data if none exists
-    const loadProjects = () => {
-      try {
-        const savedProjects = localStorage.getItem("projects");
-        if (savedProjects) {
-          return JSON.parse(savedProjects);
-        }
-      } catch (error) {
-        console.error("Error loading projects:", error);
-      }
+    const fetchAllProjects = async () => {
+      setIsLoading(true);
+      setError(null);
       
-      // Return demo projects if no saved projects exist
-      return [
-        {
-          id: 1,
-          title: "Mumbai Beach Cleanup Drive",
-          description: "Join us in cleaning up the beaches of Mumbai and making them plastic-free.",
-          startDate: "2025-04-15",
-          endDate: "2025-04-30",
-          location: "Mumbai, Maharashtra",
-          sdgs: ["SDG 14", "SDG 15"],
-          status: "Planning",
-          progress: 0,
-          volunteers: {
-            required: 20,
-            enrolled: 0,
-            pending: 0
-          }
-        },
-        {
-          id: 2,
-          title: "Versova Beach Restoration",
-          description: "Help restore the beauty of Versova Beach by participating in our cleanup activities.",
-          startDate: "2025-05-01",
-          endDate: "2025-05-15",
-          location: "Versova, Mumbai",
-          sdgs: ["SDG 14", "SDG 15"],
-          status: "Planning",
-          progress: 0,
-          volunteers: {
-            required: 15,
-            enrolled: 0,
-            pending: 0
-          }
-        },
-        {
-          id: 3,
-          title: "Rural Education Initiative",
-          description: "Volunteer to teach underprivileged children in rural areas and help improve literacy rates.",
-          startDate: "2025-04-10",
-          endDate: "2025-06-10",
-          location: "Pune District, Maharashtra",
-          sdgs: ["SDG 4", "SDG 10"],
-          status: "In Progress",
-          progress: 25,
-          volunteers: {
-            required: 10,
-            enrolled: 4,
-            pending: 2
-          }
+      try {
+        // Get fresh token
+        const token = await getFreshToken();
+        if (!token) {
+          throw new Error("No authentication token available");
         }
-      ];
+
+        const response = await axios.get(`${API_BASE_URL}/api/projects`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Randomize project order
+        const randomizedProjects = [...response.data].sort(() => Math.random() - 0.5);
+        setProjects(randomizedProjects);
+      } catch (err) {
+        console.error("Error fetching projects:", err);
+        setError(err.response?.data?.message || "Failed to load projects. Please try again.");
+        
+        // If unauthorized, suggest re-login
+        if (err.response?.status === 401) {
+          setError("Session expired. Please login again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setProjects(loadProjects());
-  }, []);
-
-  // Add a new project (this would be called from CreateProject component)
-  const addProject = (newProject) => {
-    const updatedProjects = [...projects, newProject];
-    setProjects(updatedProjects);
-    
-    // Save to localStorage
-    try {
-      localStorage.setItem("projects", JSON.stringify(updatedProjects));
-    } catch (error) {
-      console.error("Error saving projects:", error);
+    // Only fetch if user is authenticated
+    if (user) {
+      fetchAllProjects();
+    } else {
+      setError("Please login to view projects");
+      setIsLoading(false);
     }
-  };
+  }, [user, getFreshToken]);
 
-  // Filter projects based on search term
   const filteredProjects = projects.filter((project) => {
+    if (!searchTerm.trim()) return true;
+    
     const searchLower = searchTerm.toLowerCase();
     return (
       project.title.toLowerCase().includes(searchLower) ||
       project.description.toLowerCase().includes(searchLower) ||
-      project.location.toLowerCase().includes(searchLower)
+      project.location.toLowerCase().includes(searchLower) ||
+      (project.skills && project.skills.some(skill => skill.toLowerCase().includes(searchLower)))
     );
   });
+
+  const clearSearch = () => {
+    setSearchTerm("");
+  };
 
   return (
     <div className="projects-page">
@@ -107,17 +80,33 @@ export default function Projects() {
           <input
             type="search"
             className="search-input"
-            placeholder="Search projects..."
+            placeholder="Search projects by title, description, location or skills..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <i className="search-icon fas fa-search"></i>
+          <i className="search-icon"></i>
+          {searchTerm && (
+            <button
+              onClick={clearSearch}
+              className="clear-search"
+            >
+              ×
+            </button>
+          )}
         </div>
       </div>
 
-      {filteredProjects.length === 0 ? (
+      {isLoading ? (
+        <div className="loading-spinner"></div>
+      ) : error ? (
+        <div className="error-message">{error}</div>
+      ) : filteredProjects.length === 0 ? (
         <div className="no-projects">
-          <p>No projects found. Try a different search term or create a new project.</p>
+          <p>
+            {searchTerm 
+              ? "No projects match your search. Try different keywords."
+              : "There are currently no projects available."}
+          </p>
         </div>
       ) : (
         <div className="projects-grid">

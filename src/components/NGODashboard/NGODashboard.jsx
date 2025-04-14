@@ -1,79 +1,205 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "./NGODashboard.css";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 
+function NGODashboard() {
+  const navigate = useNavigate();
+  const [ngoInfo, setNgoInfo] = useState(null);
+  const [activeProjects, setActiveProjects] = useState([]);
+  const [completedProjects, setCompletedProjects] = useState([]);
+  const [volunteers, setVolunteers] = useState([]);
+  const [pendingVolunteers, setPendingVolunteers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [activeTab, setActiveTab] = useState("projects");
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        
+        // Get user from localStorage
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.type !== 'ngo') {
+          console.error('Access denied - not an NGO user:', user);
+          navigate('/login-ngo');
+        }
 
- function NGODashboard() {
+        // Fetch NGO profile
+        const profileResponse = await axios.get(
+          `${API_BASE_URL}/api/ngo-profile/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
 
-  
-  // State for active tab in each section
-  const [activeProjectsTab, setActiveProjectsTab] = useState("all");
-  const [activeVolunteersTab, setActiveVolunteersTab] = useState("active");
-  
-  // Filter projects based on active tab
-  const filteredProjects = () => {
-    if (activeProjectsTab === "all") return projects;
-    return projects.filter(project => project.status.toLowerCase() === activeProjectsTab);
+        setNgoInfo({
+          id: user.id,
+          orgName: profileResponse.data.orgName,
+          email: user.email,
+          phone: profileResponse.data.orgPhone,
+          address: profileResponse.data.orgAddress,
+          mission: profileResponse.data.orgMission,
+          website: profileResponse.data.orgWebsite,
+          logo: profileResponse.data.logo || "/default-ngo-logo.png",
+          description: profileResponse.data.description,
+          contactPerson: profileResponse.data.contactPerson,
+          location: profileResponse.data.location,
+          volNeeds: profileResponse.data.volNeeds || [],
+          verified: profileResponse.data.isVerified,
+          createdAt: profileResponse.data.createdAt || new Date().toISOString()
+        });
+
+        // Fetch projects
+        const projectsResponse = await axios.get(
+          `${API_BASE_URL}/api/projects/ngo/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+
+        const projects = projectsResponse.data || [];
+        setActiveProjects(projects.filter(project => project.status === 'Active'));
+        setCompletedProjects(projects.filter(project => project.status === 'Completed'));
+
+        // Fetch volunteers
+        const volunteersResponse = await axios.get(
+          `${API_BASE_URL}/api/volunteers/ngo/${user.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          }
+        );
+
+        const allVolunteers = volunteersResponse.data || [];
+        setVolunteers(allVolunteers.filter(v => v.status === 'Active'));
+        setPendingVolunteers(allVolunteers.filter(v => v.status === 'Pending'));
+
+        // Mock notifications
+        setNotifications([
+          {
+            id: 1,
+            type: "application",
+            from: "John Doe",
+            content: "Applied to your Community Education Program",
+            time: "2 hours ago",
+            unread: true
+          }
+        ]);
+
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login-ngo');
   };
 
-  const filteredVolunteers = () => {
-    if (activeVolunteersTab === "active") return volunteers;
-    return pendingVolunteers;
+  const handleVolunteerStatusChange = async (volunteerId, status) => {
+    try {
+      await axios.put(
+        `${API_BASE_URL}/api/volunteers/${volunteerId}/status`,
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      if (status === 'Approved') {
+        const volunteer = pendingVolunteers.find(v => v.id === volunteerId);
+        setVolunteers([...volunteers, { ...volunteer, status: 'Active' }]);
+        setPendingVolunteers(pendingVolunteers.filter(v => v.id !== volunteerId));
+      } else {
+        setPendingVolunteers(pendingVolunteers.filter(v => v.id !== volunteerId));
+      }
+    } catch (error) {
+      console.error("Failed to update volunteer status:", error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading your dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!ngoInfo) {
+    return <div>Error loading dashboard. Please try again.</div>;
+  }
 
   return (
     <div className="ngo-dashboard">
-      /* Dashboard Header */
+      {/* Dashboard Header */}
       <header className="dashboard-header">
         <div className="container">
           <div className="ngo-profile">
-            <img src={ngoInfo.logo} alt={ngoInfo.name} className="ngo-logo" />
+            <img
+              src={ngoInfo.logo}
+              alt={ngoInfo.orgName}
+              className="ngo-logo"
+            />
             <div className="ngo-info">
               <div className="ngo-name-container">
-                <h1 className="ngo-name">{ngoInfo.name}</h1>
+                <h1 className="ngo-name">{ngoInfo.orgName}</h1>
                 {ngoInfo.verified && (
                   <span className="verified-badge" title="Verified Organization">
                     <i className="fas fa-check-circle"></i>
                   </span>
                 )}
               </div>
-              <p className="ngo-description">{ngoInfo.description}</p>
+              <p className="ngo-description">{ngoInfo.mission}</p>
               <div className="ngo-tags">
-                {ngoInfo.sdgs.map((sdg, index) => (
-                  <span key={index} className={`tag tag-${sdg === "SDG 4" ? "blue" : "green"}`}>
-                    {sdg}
+                {ngoInfo.volNeeds.slice(0, 3).map((need, index) => (
+                  <span key={index} className="tag tag-blue">
+                    {need}
                   </span>
                 ))}
+                {ngoInfo.volNeeds.length > 3 && (
+                  <span className="tag tag-blue">+{ngoInfo.volNeeds.length - 3} more</span>
+                )}
               </div>
             </div>
           </div>
           <div className="dashboard-actions">
             <Link to="/create-project">
               <button className="primary-button">
-                <i className="fas fa-plus"></i> Create New Project
+                <i className="fas fa-plus"></i> Create Project
               </button>
             </Link>
-            <button className="secondary-button">
-              <i className="fas fa-edit"></i> Edit Profile
+            <button className="secondary-button" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt"></i> Logout
             </button>
           </div>
         </div>
       </header>
+
       <main className="dashboard-content">
         <div className="container">
           <div className="dashboard-grid">
             {/* Dashboard Sidebar */}
             <aside className="dashboard-sidebar">
               <div className="sidebar-section">
-                <h3 className="sidebar-title">NGO Details</h3>
+                <h3 className="sidebar-title">Organization Details</h3>
                 <ul className="sidebar-list">
-                  <li className="sidebar-item">
-                    <span className="item-label">
-                      <i className="fas fa-user"></i> Contact:
-                    </span>
-                    <span className="item-value">{ngoInfo.contactPerson}</span>
-                  </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-envelope"></i> Email:
@@ -84,321 +210,359 @@ import "./NGODashboard.css";
                     <span className="item-label">
                       <i className="fas fa-phone"></i> Phone:
                     </span>
-                    <span className="item-value">{ngoInfo.phone}</span>
+                    <span className="item-value">{ngoInfo.phone || "Not provided"}</span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-map-marker-alt"></i> Location:
                     </span>
-                    <span className="item-value">{ngoInfo.location}</span>
+                    <span className="item-value">{ngoInfo.location || "Not specified"}</span>
+                  </li>
+                  <li className="sidebar-item">
+                    <span className="item-label">
+                      <i className="fas fa-globe"></i> Website:
+                    </span>
+                    <span className="item-value">
+                      {ngoInfo.website ? (
+                        <a
+                          href={
+                            ngoInfo.website.startsWith("http")
+                              ? ngoInfo.website
+                              : `https://${ngoInfo.website}`
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {ngoInfo.website}
+                        </a>
+                      ) : (
+                        "Not provided"
+                      )}
+                    </span>
+                  </li>
+                  <li className="sidebar-item">
+                    <span className="item-label">
+                      <i className="fas fa-calendar"></i> Member Since:
+                    </span>
+                    <span className="item-value">
+                      {new Date(ngoInfo.createdAt).toLocaleDateString()}
+                    </span>
                   </li>
                 </ul>
               </div>
-              
+
               <div className="sidebar-section">
-                <h3 className="sidebar-title">Quick Stats</h3>
+                <h3 className="sidebar-title">Volunteer Needs</h3>
+                <div className="volunteer-needs">
+                  {ngoInfo.volNeeds.length > 0 ? (
+                    ngoInfo.volNeeds.map((need, index) => (
+                      <div key={index} className="need-item">
+                        <i className="fas fa-check-circle"></i>
+                        <span>{need}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="no-needs">No specific needs listed</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="sidebar-section">
+                <h3 className="sidebar-title">Organization Stats</h3>
                 <div className="stats-grid">
                   <div className="stat-card">
-                    <span className="stat-value">{projects.length}</span>
-                    <span className="stat-label">Projects</span>
+                    <span className="stat-value">{activeProjects.length + completedProjects.length}</span>
+                    <span className="stat-label">Total Projects</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-value">{volunteers.length}</span>
-                    <span className="stat-label">Volunteers</span>
-                  </div>
-                  <div className="stat-card">
-                    <span className="stat-value">{pendingVolunteers.length}</span>
-                    <span className="stat-label">Pending</span>
+                    <span className="stat-label">Active Volunteers</span>
                   </div>
                   <div className="stat-card">
                     <span className="stat-value">
-                      {projects.filter(p => p.status === "Completed").length}
+                      {volunteers.reduce((sum, volunteer) => sum + volunteer.hoursContributed, 0)}
                     </span>
-                    <span className="stat-label">Completed</span>
+                    <span className="stat-label">Volunteer Hours</span>
                   </div>
                 </div>
               </div>
-              
-              <div className="sidebar-section">
-                <h3 className="sidebar-title">Quick Actions</h3>
-                <div className="quick-actions">
-                  <button className="action-button">
-                    <i className="fas fa-envelope"></i> Messages
-                    <span className="notification-badge">3</span>
-                  </button>
-                  <button className="action-button">
-                    <i className="fas fa-file-alt"></i> Reports
-                  </button>
-                  <button className="action-button">
-                    <i className="fas fa-users"></i> Team
-                  </button>
-                  <button className="action-button">
-                    <i className="fas fa-cog"></i> Settings
-                  </button>
-                </div>
-              </div>
-            </aside>
-            
-            {/* Main Dashboard Content */}
-            <div className="dashboard-main">
-              {/* Projects Section */}
-              <section className="dashboard-section">
-                <div className="section-header-with-tabs">
-                  <h2 className="section-title">Projects</h2>
-                  <div className="tabs">
-                    <button 
-                      className={`tab ${activeProjectsTab === "all" ? "active" : ""}`}
-                      onClick={() => setActiveProjectsTab("all")}
-                    >
-                      All
-                    </button>
-                    <button 
-                      className={`tab ${activeProjectsTab === "in progress" ? "active" : ""}`}
-                      onClick={() => setActiveProjectsTab("in progress")}
-                    >
-                      In Progress
-                    </button>
-                    <button 
-                      className={`tab ${activeProjectsTab === "planning" ? "active" : ""}`}
-                      onClick={() => setActiveProjectsTab("planning")}
-                    >
-                      Planning
-                    </button>
-                    <button 
-                      className={`tab ${activeProjectsTab === "completed" ? "active" : ""}`}
-                      onClick={() => setActiveProjectsTab("completed")}
-                    >
-                      Completed
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="projects-list">
-                  {filteredProjects().map(project => (
-                    <div key={project.id} className="project-item">
-                      <div className="project-header">
-                        <h3 className="project-title">{project.title}</h3>
-                        <span className={`project-status status-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
-                          {project.status}
-                        </span>
-                      </div>
-                      
-                      <div className="project-description">
-                        <p>{project.description}</p>
-                      </div>
-                      
-                      <div className="project-details">
-                        <div className="detail-item">
-                          <span className="detail-label">
-                            <i className="fas fa-calendar"></i> Timeline:
-                          </span>
-                          <span className="detail-value">
-                            {new Date(project.startDate).toLocaleDateString()} - 
-                            {new Date(project.endDate).toLocaleDateString()}
-                          </span>
+
+              {notifications.length > 0 && (
+                <div className="sidebar-section">
+                  <h3 className="sidebar-title">Notifications</h3>
+                  <div className="notifications-list">
+                    {notifications.map(notification => (
+                      <div key={notification.id} className={`notification-item ${notification.unread ? 'unread' : ''}`}>
+                        <div className="notification-icon">
+                          {notification.type === "application" && <i className="fas fa-user-plus"></i>}
+                          {notification.type === "message" && <i className="fas fa-envelope"></i>}
                         </div>
-                        <div className="detail-item">
-                          <span className="detail-label">
-                            <i className="fas fa-map-marker-alt"></i> Location:
-                          </span>
-                          <span className="detail-value">{project.location}</span>
-                        </div>
-                      </div>
-                      
-                      <div className="project-sdgs">
-                        {project.sdgs.map((sdg, index) => (
-                          <span 
-                            key={index} 
-                            className={`tag tag-${sdg === "SDG 4" ? "blue" : sdg === "SDG 9" ? "purple" : "green"}`}
-                          >
-                            {sdg}
-                          </span>
-                        ))}
-                      </div>
-                      
-                      <div className="project-progress">
-                        <div className="progress-header">
-                          <span className="progress-label">Overall Progress</span>
-                          <span className="progress-value">{project.progress}%</span>
-                        </div>
-                        <div className="progress-bar">
-                          <div 
-                            className="progress-fill" 
-                            style={{ width: `${project.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      
-                      <div className="project-volunteers-summary">
-                        <div className="volunteers-stats">
-                          <div className="volunteer-stat">
-                            <span className="stat-label">Required:</span>
-                            <span className="stat-value">{project.volunteers.required}</span>
-                          </div>
-                          <div className="volunteer-stat">
-                            <span className="stat-label">Enrolled:</span>
-                            <span className="stat-value">{project.volunteers.enrolled}</span>
-                          </div>
-                          <div className="volunteer-stat">
-                            <span className="stat-label">Pending:</span>
-                            <span className="stat-value">{project.volunteers.pending}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="project-actions">
-                        <button className="project-action-btn">
-                          <i className="fas fa-tasks"></i> Manage Tasks
-                        </button>
-                        <button className="project-action-btn">
-                          <i className="fas fa-users"></i> View Team
-                        </button>
-                        <button className="project-action-btn">
-                          <i className="fas fa-chart-line"></i> Report
-                        </button>
-                        <button className="project-action-btn">
-                          <i className="fas fa-ellipsis-h"></i>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-              
-              {/* Volunteers Section */}
-              <section className="dashboard-section">
-                <div className="section-header-with-tabs">
-                  <h2 className="section-title">Volunteers</h2>
-                  <div className="tabs">
-                    <button 
-                      className={`tab ${activeVolunteersTab === "active" ? "active" : ""}`}
-                      onClick={() => setActiveVolunteersTab("active")}
-                    >
-                      Active ({volunteers.length})
-                    </button>
-                    <button 
-                      className={`tab ${activeVolunteersTab === "pending" ? "active" : ""}`}
-                      onClick={() => setActiveVolunteersTab("pending")}
-                    >
-                      Pending Applications ({pendingVolunteers.length})
-                    </button>
-                  </div>
-                </div>
-                
-                {activeVolunteersTab === "active" ? (
-                  <div className="volunteers-table-container">
-                    <table className="volunteers-table">
-                      <thead>
-                        <tr>
-                          <th>Volunteer</th>
-                          <th>Skills</th>
-                          <th>Project</th>
-                          <th>Joined</th>
-                          <th>Hours</th>
-                          <th>Status</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredVolunteers().map(volunteer => (
-                          <tr key={volunteer.id}>
-                            <td className="volunteer-info">
-                              <img 
-                                src={volunteer.avatar} 
-                                alt={volunteer.name}
-                                className="volunteer-avatar" 
-                              />
-                              <span className="volunteer-name">{volunteer.name}</span>
-                            </td>
-                            <td className="volunteer-skills">
-                              {volunteer.skills.map((skill, index) => (
-                                <span key={index} className="skill-tag">
-                                  {skill}
-                                </span>
-                              ))}
-                            </td>
-                            <td>{volunteer.project}</td>
-                            <td>{new Date(volunteer.joinedDate).toLocaleDateString()}</td>
-                            <td className="volunteer-hours">{volunteer.hoursContributed} hrs</td>
-                            <td>
-                              <span className="volunteer-status status-active">
-                                {volunteer.status}
-                              </span>
-                            </td>
-                            <td className="action-cell">
-                              <button className="action-btn" title="Message">
-                                <i className="fas fa-envelope"></i>
-                              </button>
-                              <button className="action-btn" title="View Profile">
-                                <i className="fas fa-user"></i>
-                              </button>
-                              <button className="action-btn" title="More">
-                                <i className="fas fa-ellipsis-v"></i>
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="applications-list">
-                    {filteredVolunteers().map(applicant => (
-                      <div key={applicant.id} className="application-card">
-                        <div className="application-header">
-                          <div className="applicant-info">
-                            <img 
-                              src={applicant.avatar} 
-                              alt={applicant.name}
-                              className="applicant-avatar" 
-                            />
-                            <div>
-                              <h3 className="applicant-name">{applicant.name}</h3>
-                              <p className="application-date">
-                                Applied on {new Date(applicant.appliedDate).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="application-project">
-                            <span className="application-label">Applied for:</span>
-                            <span className="project-name">{applicant.appliedFor}</span>
-                          </div>
-                        </div>
-                        
-                        <div className="applicant-skills">
-                          <span className="skills-label">Skills:</span>
-                          <div className="skills-tags">
-                            {applicant.skills.map((skill, index) => (
-                              <span key={index} className="skill-tag">
-                                {skill}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                        
-                        <div className="application-message">
-                          <p>"{applicant.message}"</p>
-                        </div>
-                        
-                        <div className="application-actions">
-                          <button className="approve-btn">
-                            <i className="fas fa-check"></i> Approve
-                          </button>
-                          <button className="message-btn">
-                            <i className="fas fa-envelope"></i> Message
-                          </button>
-                          <button className="profile-btn">
-                            <i className="fas fa-user"></i> View Profile
-                          </button>
-                          <button className="reject-btn">
-                            <i className="fas fa-times"></i> Decline
-                          </button>
+                        <div className="notification-content">
+                          <p className="notification-text">{notification.content}</p>
+                          <p className="notification-meta">
+                            <span className="notification-from">{notification.from}</span>
+                            <span className="notification-time">{notification.time}</span>
+                          </p>
                         </div>
                       </div>
                     ))}
                   </div>
-                )}
-              </section>
+                </div>
+              )}
+            </aside>
+
+            {/* Main Dashboard Content */}
+            <div className="dashboard-main">
+              {/* Tabs Navigation */}
+              <div className="dashboard-tabs">
+                <button 
+                  className={`tab ${activeTab === "projects" ? "active" : ""}`}
+                  onClick={() => setActiveTab("projects")}
+                >
+                  <i className="fas fa-project-diagram"></i> Projects
+                </button>
+                <button 
+                  className={`tab ${activeTab === "volunteers" ? "active" : ""}`}
+                  onClick={() => setActiveTab("volunteers")}
+                >
+                  <i className="fas fa-users"></i> Volunteers
+                </button>
+                <button 
+                  className={`tab ${activeTab === "applications" ? "active" : ""}`}
+                  onClick={() => setActiveTab("applications")}
+                >
+                  <i className="fas fa-user-plus"></i> Applications
+                </button>
+              </div>
+
+              {/* Projects Tab */}
+              {activeTab === "projects" && (
+                <div className="dashboard-section">
+                  <div className="section-header-with-tabs">
+                    <h2 className="section-title">Your Projects</h2>
+                    <div className="tabs">
+                      <button className="tab active">
+                        Active ({activeProjects.length})
+                      </button>
+                      <button className="tab">
+                        Completed ({completedProjects.length})
+                      </button>
+                    </div>
+                  </div>
+
+                  {activeProjects.length > 0 ? (
+                    <div className="projects-list">
+                      {activeProjects.map(project => (
+                        <div key={project.id} className="project-item">
+                          <div className="project-header">
+                            <h3 className="project-title">{project.title}</h3>
+                            <span className={`project-status status-${project.status.toLowerCase()}`}>
+                              {project.status}
+                            </span>
+                          </div>
+                          
+                          <div className="project-description">
+                            <p>{project.description}</p>
+                          </div>
+                          
+                          <div className="project-details">
+                            <div className="detail-item">
+                              <span className="detail-label">
+                                <i className="fas fa-calendar"></i> Timeline:
+                              </span>
+                              <span className="detail-value">
+                                {new Date(project.startDate).toLocaleDateString()} - {' '}
+                                {new Date(project.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">
+                                <i className="fas fa-map-marker-alt"></i> Location:
+                              </span>
+                              <span className="detail-value">{project.location}</span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">
+                                <i className="fas fa-users"></i> Volunteers:
+                              </span>
+                              <span className="detail-value">
+                                {project.volunteersEnrolled}/{project.volunteersNeeded}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="project-progress">
+                            <div className="progress-header">
+                              <span className="progress-label">Project Progress</span>
+                              <span className="progress-value">
+                                {project.progress}%
+                              </span>
+                            </div>
+                            <div className="progress-bar">
+                              <div 
+                                className="progress-fill" 
+                                style={{ width: `${project.progress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          
+                          <div className="project-actions">
+                            <button className="project-action-btn">
+                              <i className="fas fa-chart-line"></i> View Analytics
+                            </button>
+                            <button className="project-action-btn">
+                              <i className="fas fa-users"></i> Manage Volunteers
+                            </button>
+                            <button className="project-action-btn">
+                              <i className="fas fa-edit"></i> Edit Project
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <i className="fas fa-project-diagram"></i>
+                      <p>No active projects found</p>
+                      <Link to="/create-project">
+                        <button className="primary-button">
+                          <i className="fas fa-plus"></i> Create New Project
+                        </button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Volunteers Tab */}
+              {activeTab === "volunteers" && (
+                <div className="dashboard-section">
+                  <h2 className="section-title">Your Volunteers</h2>
+                  
+                  {volunteers.length > 0 ? (
+                    <div className="volunteers-list">
+                      {volunteers.map(volunteer => (
+                        <div key={volunteer.id} className="volunteer-item">
+                          <div className="volunteer-avatar">
+                            {volunteer.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="volunteer-details">
+                            <h3 className="volunteer-name">{volunteer.name}</h3>
+                            <p className="volunteer-email">{volunteer.email}</p>
+                            <div className="volunteer-skills">
+                              {volunteer.skills.slice(0, 3).map((skill, index) => (
+                                <span key={index} className="tag tag-blue">
+                                  {skill}
+                                </span>
+                              ))}
+                              {volunteer.skills.length > 3 && (
+                                <span className="tag tag-blue">+{volunteer.skills.length - 3} more</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="volunteer-stats">
+                            <div className="stat-item">
+                              <span className="stat-label">Hours</span>
+                              <span className="stat-value">{volunteer.hoursContributed}</span>
+                            </div>
+                            <div className="stat-item">
+                              <span className="stat-label">Projects</span>
+                              <span className="stat-value">{volunteer.projectsCount}</span>
+                            </div>
+                          </div>
+                          <div className="volunteer-actions">
+                            <button className="volunteer-action-btn">
+                              <i className="fas fa-envelope"></i> Message
+                            </button>
+                            <button className="volunteer-action-btn">
+                              <i className="fas fa-tasks"></i> Assign Task
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <i className="fas fa-users"></i>
+                      <p>No active volunteers found</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Applications Tab */}
+              {activeTab === "applications" && (
+                <div className="dashboard-section">
+                  <h2 className="section-title">Volunteer Applications</h2>
+                  
+                  {pendingVolunteers.length > 0 ? (
+                    <div className="applications-list">
+                      {pendingVolunteers.map(volunteer => (
+                        <div key={volunteer.id} className="application-item">
+                          <div className="application-header">
+                            <div className="applicant-info">
+                              <div className="applicant-avatar">
+                                {volunteer.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="applicant-name">{volunteer.name}</h3>
+                                <p className="applicant-email">{volunteer.email}</p>
+                              </div>
+                            </div>
+                            <span className="application-project">{volunteer.projectName}</span>
+                          </div>
+                          
+                          <div className="application-details">
+                            <div className="detail-item">
+                              <span className="detail-label">Applied On:</span>
+                              <span className="detail-value">
+                                {new Date(volunteer.applicationDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">Skills:</span>
+                              <div className="skills-tags">
+                                {volunteer.skills.map((skill, index) => (
+                                  <span key={index} className="tag tag-blue">
+                                    {skill}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">Motivation:</span>
+                              <p className="motivation-text">{volunteer.motivation}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="application-actions">
+                            <button 
+                              className="approve-btn"
+                              onClick={() => handleVolunteerStatusChange(volunteer.id, 'Approved')}
+                            >
+                              <i className="fas fa-check"></i> Approve
+                            </button>
+                            <button 
+                              className="reject-btn"
+                              onClick={() => handleVolunteerStatusChange(volunteer.id, 'Rejected')}
+                            >
+                              <i className="fas fa-times"></i> Reject
+                            </button>
+                            <button className="message-btn">
+                              <i className="fas fa-envelope"></i> Message
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <i className="fas fa-user-plus"></i>
+                      <p>No pending applications</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
