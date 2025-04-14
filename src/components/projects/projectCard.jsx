@@ -31,19 +31,12 @@ const ProjectCard = ({ project, user }) => {
   const handleApply = async () => {
     try {
       setIsApplying(true);
-      const user = JSON.parse(localStorage.getItem('user'));
       const token = localStorage.getItem('token');
-
-      if (!user || user.type !== 'individual') {
-        // Redirect to login or show error
-        return;
-      }
-
+  
       const response = await axios.post(
         `${API_BASE_URL}/api/applications`,
         {
-          projectId: project.id,
-          volunteerId: user.id
+          projectId: project.id
         },
         {
           headers: {
@@ -51,7 +44,7 @@ const ProjectCard = ({ project, user }) => {
           },
         }
       );
-
+  
       setApplicationStatus('applied');
     } catch (error) {
       console.error("Application failed:", error);
