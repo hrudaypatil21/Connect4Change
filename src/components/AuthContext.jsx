@@ -5,12 +5,15 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  getAuth,
   getIdToken
 } from 'firebase/auth';
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 
 const AuthContext = createContext();
+
+
 
 // Create axios instance with interceptors for automatic token refresh
 const createAuthenticatedAxios = (getFreshToken, logout) => {
