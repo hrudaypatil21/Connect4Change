@@ -8,7 +8,7 @@ import "./CreateProject.css";
 
 const CreateProject = () => {
   const navigate = useNavigate();
-  const { user, getFreshToken } = useAuth(); // Destructure getFreshToken
+  const { user, getFreshToken } = useAuth(); // Get getFreshToken here
   const [skillsInput, setSkillsInput] = useState("");
   const [projectData, setProjectData] = useState({
     title: "",
@@ -25,7 +25,7 @@ const CreateProject = () => {
 
   const auth = getAuth(); 
 
-useEffect(() => {
+  useEffect(() => {
     if (user?.type !== 'ngo') {
       navigate('/');
     } else {
@@ -35,7 +35,6 @@ useEffect(() => {
       }));
     }
   }, [user, navigate]);
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,12 +65,12 @@ useEffect(() => {
     e.preventDefault();
     setIsSubmitting(true);
     setError("");
-  
+    
     try {
-      const { getFreshToken } = useAuth();
       const token = await getFreshToken();
       if (!token) throw new Error('No authentication token found');
   
+      // Prepare project data without ngoId (it will be set by backend)
       const projectToCreate = {
         title: projectData.title,
         description: projectData.description,
@@ -79,8 +78,7 @@ useEffect(() => {
         startedAt: projectData.startedAt ? `${projectData.startedAt}T00:00:00` : null,
         endedAt: projectData.endedAt ? `${projectData.endedAt}T00:00:00` : null,
         location: projectData.location,
-        skills: projectData.skills,
-        ngoId: user.id
+        skills: projectData.skills
       };
   
       const response = await axios.post(
@@ -101,7 +99,7 @@ useEffect(() => {
         setError('Session expired. Please login again.');
         navigate('/login');
       } else if (error.response?.status === 403) {
-        setError('You can only create projects for your own NGO');
+        setError('You don\'t have permission to create projects');
       } else {
         setError(error.response?.data?.error || error.message || 'Failed to create project');
       }
