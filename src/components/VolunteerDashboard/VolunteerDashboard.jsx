@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./VolunteerDashboard.css";
-import { API_BASE_URL } from '../../config/api';
+import { API_BASE_URL } from "../../config/api";
 
 function VolunteerDashboard() {
   const navigate = useNavigate();
@@ -13,17 +13,19 @@ function VolunteerDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [activeProjectsTab, setActiveProjectsTab] = useState("active");
-  const [activeRecommendationsTab, setActiveRecommendationsTab] = useState("matches");
+  const [activeRecommendationsTab, setActiveRecommendationsTab] =
+    useState("matches");
   const [showMatchDetails, setShowMatchDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [applications, setApplications] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Get user from localStorage
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = JSON.parse(localStorage.getItem("user"));
         if (!user) {
-          navigate('/login');
+          navigate("/login");
           return;
         }
 
@@ -38,91 +40,44 @@ function VolunteerDashboard() {
           bio: user.bio,
           skills: user.skills || [],
           interests: user.interests || [],
-          availability: user.availability || '',
-          createdAt: user.createdAt || new Date().toISOString()
+          availability: user.availability || "",
+          createdAt: user.createdAt || new Date().toISOString(),
         });
 
-        // Fetch additional data (mock data for demonstration)
-        setActiveProjects([
-          {
-            id: 1,
-            title: "Community Teaching Program",
-            ngo: "Education For All",
-            description: "Teaching basic math and science to underprivileged children",
-            status: "Active",
-            role: "Math Tutor",
-            startDate: "2023-05-01",
-            endDate: "2023-12-31",
-            location: "Local Community Center",
-            hoursContributed: 45,
-            hoursRequired: 100,
-            nextTask: "Prepare lesson plan for next week",
-            nextTaskDeadline: "2023-11-15",
-            sdgs: ["Quality Education", "Reduced Inequalities"]
-          }
-        ]);
+        // Fetch active projects
+        const activeProjectsResponse = await axios.get(
+          `${API_BASE_URL}/api/projects/volunteer/${user.id}?status=active`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setActiveProjects(activeProjectsResponse.data);
 
-        setPastProjects([
-          {
-            id: 2,
-            title: "Summer Reading Program",
-            ngo: "Literacy Foundation",
-            description: "Helping children improve their reading skills",
-            status: "Completed",
-            role: "Reading Mentor",
-            startDate: "2023-01-15",
-            endDate: "2023-04-30",
-            location: "City Library",
-            hoursContributed: 80,
-            impact: "Helped 25 children improve their reading level by at least one grade",
-            feedback: "John was an excellent mentor who showed great patience and creativity in engaging the children.",
-            sdgs: ["Quality Education"]
-          }
-        ]);
+        // Fetch past projects
+        const pastProjectsResponse = await axios.get(
+          `${API_BASE_URL}/api/projects/volunteer/${user.id}?status=completed`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setPastProjects(pastProjectsResponse.data);
 
-        setRecommendedProjects([
-          {
-            id: 3,
-            title: "Environmental Awareness Campaign",
-            ngo: "Green Earth Initiative",
-            description: "Educating communities about sustainable practices",
-            match: 85,
-            location: "Various locations",
-            timeCommitment: "5-10 hours/week",
-            startDate: "2023-11-20",
-            skillsNeeded: ["Public Speaking", "Environmental Science"],
-            matchReasons: [
-              "Matches your interest in environmental causes",
-              "Utilizes your public speaking skills",
-              "Fits your availability"
-            ],
-            sdgs: ["Climate Action", "Life on Land"]
-          }
-        ]);
+        // Fetch recommended projects
+        const recommendedResponse = await axios.get(
+          `${API_BASE_URL}/api/projects/recommended?volunteerId=${user.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setRecommendedProjects(recommendedResponse.data);
 
-        setNotifications([
-          {
-            id: 1,
-            type: "message",
-            from: "Education For All",
-            fromRole: "Project Coordinator",
-            content: "Your teaching schedule has been updated for next week",
-            time: "2 hours ago",
-            unread: true
-          }
-        ]);
+        // Fetch applications
+        const applicationsResponse = await axios.get(
+          `${API_BASE_URL}/api/applications/volunteer/${user.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setApplications(applicationsResponse.data);
 
-        setUpcomingEvents([
-          {
-            id: 1,
-            title: "Volunteer Training Session",
-            date: "2023-11-20",
-            time: "10:00 AM - 12:00 PM",
-            location: "Community Center Room 3",
-            project: "Community Teaching Program"
-          }
-        ]);
-
+        // Fetch notifications
+        const notificationsResponse = await axios.get(
+          `${API_BASE_URL}/api/notifications?userId=${user.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setNotifications(notificationsResponse.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -138,24 +93,22 @@ function VolunteerDashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-    navigate('/login');
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/login");
   };
 
-  const [applications, setApplications] = useState([]);
-  
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        if (!user || user.type !== 'individual') return;
-        
+        const user = JSON.parse(localStorage.getItem("user"));
+        if (!user || user.type !== "individual") return;
+
         const response = await axios.get(
           `${API_BASE_URL}/api/applications/volunteer/${user.id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           }
         );
@@ -170,19 +123,25 @@ function VolunteerDashboard() {
 
   const handleApplicationStatusChange = async (projectId, status) => {
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      await axios.put(`${API_BASE_URL}/api/projects/${projectId}/status`, { 
-        volunteerId: user.id, 
-        status 
-      }, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
+      const user = JSON.parse(localStorage.getItem("user"));
+      await axios.put(
+        `${API_BASE_URL}/api/projects/${projectId}/status`,
+        {
+          volunteerId: user.id,
+          status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      
-      setActiveProjects(activeProjects.map(project => 
-        project.id === projectId ? { ...project, status } : project
-      ));
+      );
+
+      setActiveProjects(
+        activeProjects.map((project) =>
+          project.id === projectId ? { ...project, status } : project
+        )
+      );
     } catch (error) {
       console.error("Failed to update application status:", error);
     }
@@ -201,6 +160,43 @@ function VolunteerDashboard() {
     return <div>Error loading dashboard. Please try again.</div>;
   }
 
+  const renderApplicationsSection = () => (
+    <section className="dashboard-section">
+      <h2 className="section-title">My Applications</h2>
+      {applications.length > 0 ? (
+        <div className="applications-list">
+          {applications.map(application => (
+            <div key={application.id} className="application-card">
+              <div className="application-header">
+                <h3>{application.projectTitle}</h3>
+                <span className={`status-badge ${application.status.toLowerCase()}`}>
+                  {application.status}
+                </span>
+              </div>
+              <div className="application-details">
+                <p>{application.projectDescription}</p>
+                <div className="application-meta">
+                  <span>Applied on: {new Date(application.appliedAt).toLocaleDateString()}</span>
+                  <span>Status: {application.status}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state">
+          <i className="fas fa-file-alt"></i>
+          <p>No applications found</p>
+          <Link to="/browse-projects">
+            <button className="primary-button">
+              Browse Projects
+            </button>
+          </Link>
+        </div>
+      )}
+    </section>
+  );
+
   return (
     <div className="volunteer-dashboard">
       {/* Dashboard Header */}
@@ -217,7 +213,10 @@ function VolunteerDashboard() {
                   <i className="fas fa-check-circle"></i>
                 </span>
               </div>
-              <p className="volunteer-description">{volunteerInfo.bio || "Passionate volunteer making a difference"}</p>
+              <p className="volunteer-description">
+                {volunteerInfo.bio ||
+                  "Passionate volunteer making a difference"}
+              </p>
               <div className="volunteer-tags">
                 {volunteerInfo.skills.slice(0, 3).map((skill, index) => (
                   <span key={index} className="tag tag-blue">
@@ -225,7 +224,9 @@ function VolunteerDashboard() {
                   </span>
                 ))}
                 {volunteerInfo.skills.length > 3 && (
-                  <span className="tag tag-blue">+{volunteerInfo.skills.length - 3} more</span>
+                  <span className="tag tag-blue">
+                    +{volunteerInfo.skills.length - 3} more
+                  </span>
                 )}
               </div>
             </div>
@@ -242,7 +243,7 @@ function VolunteerDashboard() {
           </div>
         </div>
       </header>
-      
+
       <main className="dashboard-content">
         <div className="container">
           <div className="dashboard-grid">
@@ -261,25 +262,33 @@ function VolunteerDashboard() {
                     <span className="item-label">
                       <i className="fas fa-phone"></i> Phone:
                     </span>
-                    <span className="item-value">{volunteerInfo.phone || "Not provided"}</span>
+                    <span className="item-value">
+                      {volunteerInfo.phone || "Not provided"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-map-marker-alt"></i> Location:
                     </span>
-                    <span className="item-value">{volunteerInfo.location || "Not specified"}</span>
+                    <span className="item-value">
+                      {volunteerInfo.location || "Not specified"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-home"></i> Address:
                     </span>
-                    <span className="item-value">{volunteerInfo.address || "Not specified"}</span>
+                    <span className="item-value">
+                      {volunteerInfo.address || "Not specified"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
                       <i className="fas fa-calendar-check"></i> Availability:
                     </span>
-                    <span className="item-value">{volunteerInfo.availability || "Flexible"}</span>
+                    <span className="item-value">
+                      {volunteerInfo.availability || "Flexible"}
+                    </span>
                   </li>
                   <li className="sidebar-item">
                     <span className="item-label">
@@ -291,7 +300,7 @@ function VolunteerDashboard() {
                   </li>
                 </ul>
               </div>
-              
+
               <div className="sidebar-section">
                 <h3 className="sidebar-title">Interests & Skills</h3>
                 <div className="skills-interests-container">
@@ -309,7 +318,10 @@ function VolunteerDashboard() {
                     <h4>Interests</h4>
                     <div className="tags-container">
                       {volunteerInfo.interests.map((interest, index) => (
-                        <span key={`interest-${index}`} className="tag tag-purple">
+                        <span
+                          key={`interest-${index}`}
+                          className="tag tag-purple"
+                        >
                           {interest}
                         </span>
                       ))}
@@ -317,14 +329,20 @@ function VolunteerDashboard() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="sidebar-section">
                 <h3 className="sidebar-title">Impact Summary</h3>
                 <div className="stats-grid">
                   <div className="stat-card">
                     <span className="stat-value">
-                      {activeProjects.reduce((sum, project) => sum + project.hoursContributed, 0) +
-                       pastProjects.reduce((sum, project) => sum + project.hoursContributed, 0)}
+                      {activeProjects.reduce(
+                        (sum, project) => sum + project.hoursContributed,
+                        0
+                      ) +
+                        pastProjects.reduce(
+                          (sum, project) => sum + project.hoursContributed,
+                          0
+                        )}
                     </span>
                     <span className="stat-label">Hours</span>
                   </div>
@@ -335,24 +353,24 @@ function VolunteerDashboard() {
                     <span className="stat-label">Projects</span>
                   </div>
                   <div className="stat-card">
-                    <span className="stat-value">
-                      {pastProjects.length}
-                    </span>
+                    <span className="stat-value">{pastProjects.length}</span>
                     <span className="stat-label">Completed</span>
                   </div>
                 </div>
               </div>
-              
+
               {upcomingEvents.length > 0 && (
                 <div className="sidebar-section">
                   <h3 className="sidebar-title">Upcoming Events</h3>
                   <div className="events-list">
-                    {upcomingEvents.map(event => (
+                    {upcomingEvents.map((event) => (
                       <div key={event.id} className="event-item">
                         <div className="event-date">
                           <div className="date-display">
                             <span className="date-month">
-                              {new Date(event.date).toLocaleString('default', { month: 'short' })}
+                              {new Date(event.date).toLocaleString("default", {
+                                month: "short",
+                              })}
                             </span>
                             <span className="date-day">
                               {new Date(event.date).getDate()}
@@ -365,7 +383,8 @@ function VolunteerDashboard() {
                             <i className="fas fa-clock"></i> {event.time}
                           </p>
                           <p className="event-location">
-                            <i className="fas fa-map-marker-alt"></i> {event.location}
+                            <i className="fas fa-map-marker-alt"></i>{" "}
+                            {event.location}
                           </p>
                           <span className="event-project">{event.project}</span>
                         </div>
@@ -375,51 +394,60 @@ function VolunteerDashboard() {
                 </div>
               )}
             </aside>
-            
+
             {/* Main Dashboard Content */}
             <div className="dashboard-main">
+            {renderApplicationsSection()}
               {/* Projects Section */}
               <section className="dashboard-section">
                 <div className="section-header-with-tabs">
                   <h2 className="section-title">My Projects</h2>
                   <div className="tabs">
-                    <button 
-                      className={`tab ${activeProjectsTab === "active" ? "active" : ""}`}
+                    <button
+                      className={`tab ${
+                        activeProjectsTab === "active" ? "active" : ""
+                      }`}
                       onClick={() => setActiveProjectsTab("active")}
                     >
                       Active ({activeProjects.length})
                     </button>
-                    <button 
-                      className={`tab ${activeProjectsTab === "past" ? "active" : ""}`}
+                    <button
+                      className={`tab ${
+                        activeProjectsTab === "past" ? "active" : ""
+                      }`}
                       onClick={() => setActiveProjectsTab("past")}
                     >
                       Past ({pastProjects.length})
                     </button>
                   </div>
                 </div>
-                
+
                 {filteredProjects().length > 0 ? (
                   <div className="projects-list">
-                    {filteredProjects().map(project => (
+                    {filteredProjects().map((project) => (
                       <div key={project.id} className="project-item">
                         <div className="project-header">
                           <h3 className="project-title">{project.title}</h3>
-                          <span className={`project-status status-${project.status.toLowerCase().replace(/\s+/g, '-')}`}>
+                          <span
+                            className={`project-status status-${project.status
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
                             {project.status}
                           </span>
                         </div>
-                        
+
                         <div className="project-ngo">
                           <div className="ngo-logo-small">
                             {project.ngo.charAt(0).toUpperCase()}
                           </div>
                           <span className="ngo-name">{project.ngo}</span>
                         </div>
-                        
+
                         <div className="project-description">
                           <p>{project.description}</p>
                         </div>
-                        
+
                         <div className="project-details">
                           <div className="detail-item">
                             <span className="detail-label">
@@ -432,53 +460,67 @@ function VolunteerDashboard() {
                               <i className="fas fa-calendar"></i> Timeline:
                             </span>
                             <span className="detail-value">
-                              {new Date(project.startDate).toLocaleDateString()} - {' '}
-                              {new Date(project.endDate).toLocaleDateString()}
+                              {new Date(project.startDate).toLocaleDateString()}{" "}
+                              - {new Date(project.endDate).toLocaleDateString()}
                             </span>
                           </div>
                           <div className="detail-item">
                             <span className="detail-label">
-                              <i className="fas fa-map-marker-alt"></i> Location:
+                              <i className="fas fa-map-marker-alt"></i>{" "}
+                              Location:
                             </span>
-                            <span className="detail-value">{project.location}</span>
+                            <span className="detail-value">
+                              {project.location}
+                            </span>
                           </div>
                         </div>
-                        
+
                         {project.sdgs?.length > 0 && (
                           <div className="project-sdgs">
                             {project.sdgs.map((sdg, index) => (
-                              <span 
-                                key={index} 
-                                className={`tag tag-${index % 3 === 0 ? "blue" : index % 3 === 1 ? "purple" : "green"}`}
+                              <span
+                                key={index}
+                                className={`tag tag-${
+                                  index % 3 === 0
+                                    ? "blue"
+                                    : index % 3 === 1
+                                    ? "purple"
+                                    : "green"
+                                }`}
                               >
                                 {sdg}
                               </span>
                             ))}
                           </div>
                         )}
-                        
+
                         {activeProjectsTab === "active" && (
                           <>
                             <div className="project-progress">
                               <div className="progress-header">
-                                <span className="progress-label">Hours Contributed</span>
+                                <span className="progress-label">
+                                  Hours Contributed
+                                </span>
                                 <span className="progress-value">
-                                  {project.hoursContributed}/{project.hoursRequired} hrs
+                                  {project.hoursContributed}/
+                                  {project.hoursRequired} hrs
                                 </span>
                               </div>
                               <div className="progress-bar">
-                                <div 
-                                  className="progress-fill" 
-                                  style={{ 
+                                <div
+                                  className="progress-fill"
+                                  style={{
                                     width: `${Math.min(
-                                      (project.hoursContributed / project.hoursRequired) * 100, 
+                                      (project.hoursContributed /
+                                        project.hoursRequired) *
+                                        100,
                                       100
-                                    )}%` 
+                                    )}%`,
                                   }}
                                 ></div>
                               </div>
                             </div>
-                            
+
                             {project.nextTask && (
                               <div className="project-next-task">
                                 <div className="next-task-header">
@@ -491,7 +533,10 @@ function VolunteerDashboard() {
                                     <div className="task-deadline">
                                       <i className="fas fa-calendar-day"></i>
                                       <span>
-                                        Due by {new Date(project.nextTaskDeadline).toLocaleDateString()}
+                                        Due by{" "}
+                                        {new Date(
+                                          project.nextTaskDeadline
+                                        ).toLocaleDateString()}
                                       </span>
                                     </div>
                                   )}
@@ -500,7 +545,7 @@ function VolunteerDashboard() {
                             )}
                           </>
                         )}
-                        
+
                         {activeProjectsTab === "past" && (
                           <>
                             {project.impact && (
@@ -512,7 +557,7 @@ function VolunteerDashboard() {
                                 <p>{project.impact}</p>
                               </div>
                             )}
-                            
+
                             {project.feedback && (
                               <div className="project-feedback">
                                 <div className="feedback-header">
@@ -522,16 +567,17 @@ function VolunteerDashboard() {
                                 <p>"{project.feedback}"</p>
                               </div>
                             )}
-                            
+
                             <div className="project-hours">
                               <i className="fas fa-clock"></i>
                               <span>
-                                Hours Contributed: <strong>{project.hoursContributed}</strong>
+                                Hours Contributed:{" "}
+                                <strong>{project.hoursContributed}</strong>
                               </span>
                             </div>
                           </>
                         )}
-                        
+
                         <div className="project-actions">
                           {activeProjectsTab === "active" ? (
                             <>
@@ -548,10 +594,12 @@ function VolunteerDashboard() {
                           ) : (
                             <>
                               <button className="project-action-btn">
-                                <i className="fas fa-certificate"></i> View Certificate
+                                <i className="fas fa-certificate"></i> View
+                                Certificate
                               </button>
                               <button className="project-action-btn">
-                                <i className="fas fa-share-alt"></i> Share Impact
+                                <i className="fas fa-share-alt"></i> Share
+                                Impact
                               </button>
                             </>
                           )}
@@ -562,7 +610,10 @@ function VolunteerDashboard() {
                 ) : (
                   <div className="empty-state">
                     <i className="fas fa-project-diagram"></i>
-                    <p>No {activeProjectsTab === "active" ? "active" : "past"} projects found</p>
+                    <p>
+                      No {activeProjectsTab === "active" ? "active" : "past"}{" "}
+                      projects found
+                    </p>
                     {activeProjectsTab === "active" && (
                       <Link to="/browse-projects">
                         <button className="primary-button">
@@ -573,7 +624,7 @@ function VolunteerDashboard() {
                   </div>
                 )}
               </section>
-              
+
               {/* Recommended Projects Section */}
               <section className="dashboard-section">
                 <div className="section-header-with-tabs">
@@ -581,40 +632,54 @@ function VolunteerDashboard() {
                     <i className="fas fa-robot"></i> Recommended Projects
                   </h2>
                   <div className="tabs">
-                    <button 
-                      className={`tab ${activeRecommendationsTab === "matches" ? "active" : ""}`}
+                    <button
+                      className={`tab ${
+                        activeRecommendationsTab === "matches" ? "active" : ""
+                      }`}
                       onClick={() => setActiveRecommendationsTab("matches")}
                     >
                       Best Matches
                     </button>
-                    <button 
-                      className={`tab ${activeRecommendationsTab === "recent" ? "active" : ""}`}
+                    <button
+                      className={`tab ${
+                        activeRecommendationsTab === "recent" ? "active" : ""
+                      }`}
                       onClick={() => setActiveRecommendationsTab("recent")}
                     >
                       Recent Opportunities
                     </button>
                   </div>
                 </div>
-                
+
                 {recommendedProjects.length > 0 ? (
                   <div className="recommended-projects-list">
-                    {recommendedProjects.map(project => (
-                      <div key={project.id} className="recommended-project-item">
+                    {recommendedProjects.map((project) => (
+                      <div
+                        key={project.id}
+                        className="recommended-project-item"
+                      >
                         <div className="match-score-container">
-                          <div className="match-score" style={{ 
-                            background: `conic-gradient(var(--primary-color) ${project.match}%, #f3f4f6 0)` 
-                          }}>
+                          <div
+                            className="match-score"
+                            style={{
+                              background: `conic-gradient(var(--primary-color) ${project.match}%, #f3f4f6 0)`,
+                            }}
+                          >
                             <div className="match-score-inner">
-                              <span className="match-score-percentage">{project.match}%</span>
+                              <span className="match-score-percentage">
+                                {project.match}%
+                              </span>
                               <span className="match-label">Match</span>
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="recommended-project-content">
                           <div className="recommended-project-header">
-                            <h3 className="recommended-project-title">{project.title}</h3>
-                            
+                            <h3 className="recommended-project-title">
+                              {project.title}
+                            </h3>
+
                             <div className="project-ngo">
                               <div className="ngo-logo-small">
                                 {project.ngo.charAt(0).toUpperCase()}
@@ -622,57 +687,77 @@ function VolunteerDashboard() {
                               <span className="ngo-name">{project.ngo}</span>
                             </div>
                           </div>
-                          
+
                           <div className="recommended-project-details">
                             <div className="detail-item">
                               <span className="detail-label">
-                                <i className="fas fa-map-marker-alt"></i> Location:
+                                <i className="fas fa-map-marker-alt"></i>{" "}
+                                Location:
                               </span>
-                              <span className="detail-value">{project.location}</span>
+                              <span className="detail-value">
+                                {project.location}
+                              </span>
                             </div>
                             <div className="detail-item">
                               <span className="detail-label">
                                 <i className="fas fa-clock"></i> Time:
                               </span>
-                              <span className="detail-value">{project.timeCommitment}</span>
+                              <span className="detail-value">
+                                {project.timeCommitment}
+                              </span>
                             </div>
                             <div className="detail-item">
                               <span className="detail-label">
                                 <i className="fas fa-calendar"></i> Starts:
                               </span>
                               <span className="detail-value">
-                                {new Date(project.startDate).toLocaleDateString()}
+                                {new Date(
+                                  project.startDate
+                                ).toLocaleDateString()}
                               </span>
                             </div>
                           </div>
-                          
+
                           {project.sdgs?.length > 0 && (
                             <div className="project-sdgs">
                               {project.sdgs.map((sdg, index) => (
-                                <span 
-                                  key={index} 
-                                  className={`tag tag-${index % 3 === 0 ? "blue" : index % 3 === 1 ? "purple" : "green"}`}
+                                <span
+                                  key={index}
+                                  className={`tag tag-${
+                                    index % 3 === 0
+                                      ? "blue"
+                                      : index % 3 === 1
+                                      ? "purple"
+                                      : "green"
+                                  }`}
                                 >
                                   {sdg}
                                 </span>
                               ))}
                             </div>
                           )}
-                          
-                          <p className="recommended-project-description">{project.description}</p>
-                          
+
+                          <p className="recommended-project-description">
+                            {project.description}
+                          </p>
+
                           {project.skillsNeeded?.length > 0 && (
                             <div className="skills-needed">
-                              <span className="skills-label">Skills Needed:</span>
+                              <span className="skills-label">
+                                Skills Needed:
+                              </span>
                               <div className="skills-tags">
                                 {project.skillsNeeded.map((skill, index) => (
-                                  <span 
-                                    key={index} 
+                                  <span
+                                    key={index}
                                     className={`skill-tag ${
-                                      volunteerInfo.skills.includes(skill) ? 'skill-match' : ''
+                                      volunteerInfo.skills.includes(skill)
+                                        ? "skill-match"
+                                        : ""
                                     }`}
                                   >
-                                    {skill} {volunteerInfo.skills.includes(skill) && (
+                                    {skill}{" "}
+                                    {volunteerInfo.skills.includes(skill) && (
                                       <i className="fas fa-check"></i>
                                     )}
                                   </span>
@@ -680,7 +765,7 @@ function VolunteerDashboard() {
                               </div>
                             </div>
                           )}
-                          
+
                           {showMatchDetails === project.id && (
                             <div className="match-details">
                               <h4>Why This Matches You:</h4>
@@ -694,7 +779,7 @@ function VolunteerDashboard() {
                               </ul>
                             </div>
                           )}
-                          
+
                           <div className="recommended-project-actions">
                             <Link to={`/projects/${project.id}`}>
                               <button className="apply-btn">
@@ -704,16 +789,26 @@ function VolunteerDashboard() {
                             <button className="save-btn">
                               <i className="fas fa-bookmark"></i> Save
                             </button>
-                            <button 
+                            <button
                               className="match-details-btn"
-                              onClick={() => setShowMatchDetails(
-                                showMatchDetails === project.id ? null : project.id
-                              )}
+                              onClick={() =>
+                                setShowMatchDetails(
+                                  showMatchDetails === project.id
+                                    ? null
+                                    : project.id
+                                )
+                              }
                             >
                               {showMatchDetails === project.id ? (
-                                <><i className="fas fa-chevron-up"></i> Hide Details</>
+                                <>
+                                  <i className="fas fa-chevron-up"></i> Hide
+                                  Details
+                                </>
                               ) : (
-                                <><i className="fas fa-chevron-down"></i> Show Details</>
+                                <>
+                                  <i className="fas fa-chevron-down"></i> Show
+                                  Details
+                                </>
                               )}
                             </button>
                           </div>
