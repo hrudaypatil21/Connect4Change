@@ -970,13 +970,19 @@
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  transition: transform 0.2s;
 }
 
 .application-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
+}
+
+.application-header h3 {
+  margin: 0;
+  color: var(--primary-color);
 }
 
 .volunteer-info {

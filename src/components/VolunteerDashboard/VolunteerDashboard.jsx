@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+
 import "./VolunteerDashboard.css";
 import { API_BASE_URL } from "../../config/api";
 
@@ -17,21 +18,26 @@ function VolunteerDashboard() {
     useState("matches");
   const [showMatchDetails, setShowMatchDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
   const [applications, setApplications] = useState([]);
-
+  const [error, setError] = useState(null);
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Get user from localStorage
+        setIsLoading(true);
         const user = JSON.parse(localStorage.getItem("user"));
-        if (!user) {
+        const token = localStorage.getItem("token");
+
+        if (!user || user.type !== "individual") {
           navigate("/login");
           return;
         }
 
-        // Set basic volunteer info from stored data
+        // Set basic volunteer info
         setVolunteerInfo({
           id: user.id,
+          uid: user.uid,
           name: user.name,
           email: user.email,
           location: user.location,
@@ -44,42 +50,35 @@ function VolunteerDashboard() {
           createdAt: user.createdAt || new Date().toISOString(),
         });
 
-        // Fetch active projects
-        const activeProjectsResponse = await axios.get(
-          `${API_BASE_URL}/api/projects/volunteer/${user.id}?status=active`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setActiveProjects(activeProjectsResponse.data);
+        // Fetch all data in parallel
+        const [
+          activeProjectsRes,
+          pastProjectsRes,
+          recommendedRes,
+          applicationsRes,
+          notificationsRes
+        ] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/projects/volunteer/${user.id}?status=active`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/projects/volunteer/${user.id}?status=completed`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/projects/recommended?volunteerId=${user.uid}`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/applications/volunteer/${user.id}`, 
+            { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_BASE_URL}/api/notifications?userId=${user.id}`, 
+            { headers: { Authorization: `Bearer ${token}` } })
+        ]);
 
-        // Fetch past projects
-        const pastProjectsResponse = await axios.get(
-          `${API_BASE_URL}/api/projects/volunteer/${user.id}?status=completed`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setPastProjects(pastProjectsResponse.data);
+        setActiveProjects(activeProjectsRes.data);
+        setPastProjects(pastProjectsRes.data);
+        setRecommendedProjects(recommendedRes.data);
+        setApplications(applicationsRes.data);
+        setNotifications(notificationsRes.data);
 
-        // Fetch recommended projects
-        const recommendedResponse = await axios.get(
-          `${API_BASE_URL}/api/projects/recommended?volunteerId=${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setRecommendedProjects(recommendedResponse.data);
-
-        // Fetch applications
-        const applicationsResponse = await axios.get(
-          `${API_BASE_URL}/api/applications/volunteer/${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setApplications(applicationsResponse.data);
-
-        // Fetch notifications
-        const notificationsResponse = await axios.get(
-          `${API_BASE_URL}/api/notifications?userId=${user.id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setNotifications(notificationsResponse.data);
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
+        setError("Failed to load dashboard data. Please try again later.");
       } finally {
         setIsLoading(false);
       }
@@ -108,42 +107,58 @@ function VolunteerDashboard() {
           `${API_BASE_URL}/api/applications/volunteer/${user.id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
             },
           }
         );
-        setApplications(response.data);
-      } catch (err) {
-        console.error("Failed to fetch applications:", err);
+
+        setApplications(response.data || []);
+      } catch (error) {
+        console.error("Failed to fetch applications:", error);
+        if (setError) {
+          setError("Failed to load applications. Please try again.");
+        }
       }
     };
 
     fetchApplications();
   }, []);
 
-  const handleApplicationStatusChange = async (projectId, status) => {
+  const handleApplicationStatusChange = async (applicationId, status) => {
     try {
-      const user = JSON.parse(localStorage.getItem("user"));
-      await axios.put(
-        `${API_BASE_URL}/api/projects/${projectId}/status`,
+      const token = localStorage.getItem("token");
+      const response = await axios.put(
+        `${API_BASE_URL}/api/applications/${applicationId}/status`,
+        null,
         {
-          volunteerId: user.id,
-          status,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          params: { status },
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      setActiveProjects(
-        activeProjects.map((project) =>
-          project.id === projectId ? { ...project, status } : project
+      // Update local state
+      setApplications(prev => 
+        prev.map(app => 
+          app.id === applicationId ? response.data : app
         )
       );
+
+      // Show success notification
+      setNotifications(prev => [
+        {
+          id: Date.now(),
+          type: 'success',
+          content: `Application ${status.toLowerCase()} successfully`,
+          time: 'Just now',
+          unread: true,
+        },
+        ...prev,
+      ]);
+
     } catch (error) {
-      console.error("Failed to update application status:", error);
+      console.error("Failed to update application:", error);
+      setError("Failed to update application. Please try again.");
     }
   };
 
@@ -163,9 +178,11 @@ function VolunteerDashboard() {
   const renderApplicationsSection = () => (
     <section className="dashboard-section">
       <h2 className="section-title">My Applications</h2>
+      {error && <div className="error-message">{error}</div>}
+      
       {applications.length > 0 ? (
         <div className="applications-list">
-          {applications.map(application => (
+          {applications.map((application) => (
             <div key={application.id} className="application-card">
               <div className="application-header">
                 <h3>{application.projectTitle}</h3>
@@ -174,10 +191,26 @@ function VolunteerDashboard() {
                 </span>
               </div>
               <div className="application-details">
-                <p>{application.projectDescription}</p>
+                <p className="application-description">
+                  {application.projectDescription || "No description available"}
+                </p>
                 <div className="application-meta">
-                  <span>Applied on: {new Date(application.appliedAt).toLocaleDateString()}</span>
-                  <span>Status: {application.status}</span>
+                  <span>
+                    <i className="fas fa-calendar"></i> Applied:{" "}
+                    {new Date(application.appliedAt).toLocaleDateString()}
+                  </span>
+                  <span>
+                    <i className="fas fa-building"></i> NGO:{" "}
+                    {application.ngoName || "Unknown NGO"}
+                  </span>
+                  {application.status === "PENDING" && (
+                    <button 
+                      className="withdraw-btn"
+                      onClick={() => handleApplicationStatusChange(application.id, "WITHDRAWN")}
+                    >
+                      <i className="fas fa-times"></i> Withdraw
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -187,7 +220,7 @@ function VolunteerDashboard() {
         <div className="empty-state">
           <i className="fas fa-file-alt"></i>
           <p>No applications found</p>
-          <Link to="/browse-projects">
+          <Link to="/projects">
             <button className="primary-button">
               Browse Projects
             </button>
@@ -196,6 +229,7 @@ function VolunteerDashboard() {
       )}
     </section>
   );
+
 
   return (
     <div className="volunteer-dashboard">
@@ -229,17 +263,16 @@ function VolunteerDashboard() {
                   </span>
                 )}
               </div>
+              
             </div>
           </div>
+          
           <div className="dashboard-actions">
-            <Link to="/browse-projects">
-              <button className="primary-button">
-                <i className="fas fa-search"></i> Browse Projects
-              </button>
-            </Link>
-            <button className="secondary-button" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i> Logout
-            </button>
+          <Link to="/projects">
+                      <button className="primary-button">
+                        Browse All Projects
+                      </button>
+                    </Link>
           </div>
         </div>
       </header>
@@ -397,7 +430,7 @@ function VolunteerDashboard() {
 
             {/* Main Dashboard Content */}
             <div className="dashboard-main">
-            {renderApplicationsSection()}
+              {renderApplicationsSection()}
               {/* Projects Section */}
               <section className="dashboard-section">
                 <div className="section-header-with-tabs">
@@ -614,13 +647,7 @@ function VolunteerDashboard() {
                       No {activeProjectsTab === "active" ? "active" : "past"}{" "}
                       projects found
                     </p>
-                    {activeProjectsTab === "active" && (
-                      <Link to="/browse-projects">
-                        <button className="primary-button">
-                          Browse Available Projects
-                        </button>
-                      </Link>
-                    )}
+                    {activeProjectsTab === "active" }
                   </div>
                 )}
               </section>
@@ -820,11 +847,7 @@ function VolunteerDashboard() {
                   <div className="empty-state">
                     <i className="fas fa-search"></i>
                     <p>No recommended projects found</p>
-                    <Link to="/browse-projects">
-                      <button className="primary-button">
-                        Browse All Projects
-                      </button>
-                    </Link>
+
                   </div>
                 )}
               </section>

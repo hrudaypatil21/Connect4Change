@@ -38,10 +38,11 @@ const Header = () => {
         <div className="main-menu">
           <Link to="/" className="nav-link">Home</Link>
           <Link to="/projects" className="nav-link">Projects</Link>
-          <Link to="/projects-match" className="nav-link">Matching</Link>
+          <Link to="/projects-match" className="nav-link">Recommend</Link>
           <Link to="/ngos" className="nav-link">NGOs</Link>
           <Link to="/volunteers-page" className="nav-link">Volunteers</Link>
           <Link to="/sdg-cards" className="nav-link">About SDGs</Link>
+
         </div>
         <div className="nav-actions">
           {user ? (

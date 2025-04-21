@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { auth } from '../config/firebase';
 import { 
   createUserWithEmailAndPassword, 
@@ -26,15 +26,19 @@ const createAuthenticatedAxios = (getFreshToken, logout) => {
 
   // Use interceptors to handle token management
   instance.interceptors.request.use(async (config) => {
-    // Get token from localStorage on each request
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    try {
+        const token = await getFreshToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    } catch (error) {
+        logout();
+        return Promise.reject(error);
     }
-    return config;
-  }, (error) => {
+}, (error) => {
     return Promise.reject(error);
-  });
+});
 
   // Response interceptor for handling 401 errors
   instance.interceptors.response.use(
@@ -95,35 +99,36 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  const getFreshToken = useCallback(async () => {
-    try {
-      if (!auth.currentUser) return null;
-      
-      // Force token refresh
-      const token = await getIdToken(auth.currentUser, true);
-      
-      // Update token in localStorage
-      localStorage.setItem('token', token);
-      
-      // Update user state with new token
-      setUser(prev => {
-        if (prev) {
-          const updated = { ...prev, token };
-          localStorage.setItem('user', JSON.stringify(updated));
-          return updated;
-        }
-        return prev;
-      });
-      
-      return token;
-    } catch (error) {
-      console.error("Error refreshing token:", error);
+  // In your AuthProvider component
+const getFreshToken = useCallback(async () => {
+  try {
+    if (!auth.currentUser) {
+      logout();
       return null;
     }
-  }, []);
+    
+    const token = await getIdToken(auth.currentUser, true); // Force refresh
+    
+    localStorage.setItem('token', token);
+    setUser(prev => {
+      if (prev) {
+        const updated = { ...prev, token };
+        localStorage.setItem('user', JSON.stringify(updated));
+        return updated;
+      }
+      return prev;
+    });
+    
+    return token;
+  } catch (error) {
+    console.error("Error refreshing token:", error);
+    logout();
+    return null;
+  }
+}, [logout]);
 
   // Create authenticated axios instance
-  const api = createAuthenticatedAxios(getFreshToken, logout);
+  const api = useMemo(() => createAuthenticatedAxios(getFreshToken, logout), [getFreshToken, logout]);
 
   const updateAuthUser = useCallback((userData) => {
     setUser(userData);
@@ -306,8 +311,7 @@ export function AuthProvider({ children }) {
           } catch (profileError) {
             console.error('Profile fetch failed:', profileError);
             
-            // If profile fetch fails but we have stored user data with valid token,
-            // use that as a fallback
+
             if (storedUser) {
               updateAuthUser({...storedUser, token});
             } else {

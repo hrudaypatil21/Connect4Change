@@ -2,10 +2,18 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./NGODashboard.css";
 import axios from "axios";
+import {useAuth} from "../AuthContext"
 import { API_BASE_URL } from "../../config/api";
 
 function NGODashboard() {
   const navigate = useNavigate();
+  const { 
+    user: authUser, 
+    api, 
+    logout: authLogout,
+    loading: authLoading
+  } = useAuth();
+  
   const [ngoInfo, setNgoInfo] = useState(null);
   const [activeProjects, setActiveProjects] = useState([]);
   const [completedProjects, setCompletedProjects] = useState([]);
@@ -18,7 +26,7 @@ function NGODashboard() {
   const [pendingApplications, setPendingApplications] = useState([]);
 
   useEffect(() => {
-    if (activeTab === "applications" && ngoInfo) {
+    if (activeTab === "applications") {
       const fetchApplications = async () => {
         try {
           const response = await axios.get(
@@ -47,21 +55,19 @@ function NGODashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const user = JSON.parse(localStorage.getItem("user"));
-        if (!user || user.type !== "ngo") {
-          navigate("/login-ngo");
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || user.type !== 'ngo') {
+          navigate('/login-ngo');
           return;
         }
 
-        // Use consistent ID - prefer UID for Firebase-based lookups
-        const identifier = user.uid || user.id;
 
         // Fetch NGO profile
         const profileResponse = await axios.get(
-          `${API_BASE_URL}/api/ngo-profile/${identifier}`,
+          `${API_BASE_URL}/api/ngo-profile/${user.uid}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
             },
           }
         );
@@ -86,33 +92,18 @@ function NGODashboard() {
         });
 
         // Fetch projects using the database ID from the profile response
-        const projectsResponse = await axios.get(
-          `${API_BASE_URL}/api/projects/ngo/${profileResponse.data.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-
-        const activeProjects = projectsResponse.data.filter(
-          (project) =>
-            project.status === "UPCOMING" || project.status === "ACTIVE"
-        );
-        const completedProjects = projectsResponse.data.filter(
-          (project) => project.status === "COMPLETED"
-        );
-
-        setActiveProjects(activeProjects);
-        setCompletedProjects(completedProjects);
+        const projectsResponse = await api.get(`/api/projects/ngo/${profileResponse.data.id}`);
+        setActiveProjects(projectsResponse.data.filter(p => p.status === 'ACTIVE'));
+        setCompletedProjects(projectsResponse.data.filter(p => p.status === 'COMPLETED'));
+        
 
         // Rest of your data fetching...
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
         if (error.response?.status === 403) {
-          localStorage.removeItem("user");
-          localStorage.removeItem("token");
-          navigate("/login-ngo");
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          navigate('/login-ngo');
         }
       } finally {
         setIsLoading(false);
@@ -448,63 +439,83 @@ function NGODashboard() {
                   </div>
 
                   {activeProjects.length > 0 ? (
-                    <div className="projects-grid">
+                    <div className="projects-list">
                       {activeProjects.map((project) => (
-                        <div key={project.id} className="project-card">
-                          <div className="project-card-header">
-                            <h3>{project.title}</h3>
+                        <div key={project.id} className="project-item">
+                          <div className="project-header">
+                            <h3 className="project-title">{project.title}</h3>
                             <span
-                              className={`status-badge ${project.status.toLowerCase()}`}
+                              className={`project-status status-${project.status.toLowerCase()}`}
                             >
                               {project.status}
                             </span>
                           </div>
-                          <p className="project-description">
-                            {project.description}
-                          </p>
+
+                          <div className="project-description">
+                            <p>{project.description}</p>
+                          </div>
+
                           <div className="project-details">
                             <div className="detail-item">
-                              <i className="fas fa-map-marker-alt"></i>
-                              <span>{project.location}</span>
-                            </div>
-                            <div className="detail-item">
-                              <i className="fas fa-calendar-alt"></i>
-                              <span>
+                              <span className="detail-label">
+                                <i className="fas fa-calendar"></i> Timeline:
+                              </span>
+                              <span className="detail-value">
                                 {new Date(
-                                  project.startedAt
+                                  project.startDate
                                 ).toLocaleDateString()}{" "}
                                 -{" "}
-                                {project.endedAt
-                                  ? new Date(
-                                      project.endedAt
-                                    ).toLocaleDateString()
-                                  : "Ongoing"}
+                                {new Date(project.endDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">
+                                <i className="fas fa-map-marker-alt"></i>{" "}
+                                Location:
+                              </span>
+                              <span className="detail-value">
+                                {project.location}
+                              </span>
+                            </div>
+                            <div className="detail-item">
+                              <span className="detail-label">
+                                <i className="fas fa-users"></i> Volunteers:
+                              </span>
+                              <span className="detail-value">
+                                {project.volunteersEnrolled}/
+                                {project.volunteersNeeded}
                               </span>
                             </div>
                           </div>
-                          <div className="project-skills">
-                            {project.skills.slice(0, 3).map((skill, index) => (
-                              <span key={index} className="skill-tag">
-                                {skill}
+
+                          <div className="project-progress">
+                            <div className="progress-header">
+                              <span className="progress-label">
+                                Project Progress
                               </span>
-                            ))}
-                            {project.skills.length > 3 && (
-                              <span className="skill-tag">
-                                +{project.skills.length - 3} more
+                              <span className="progress-value">
+                                {project.progress}%
                               </span>
-                            )}
+                            </div>
+                            <div className="progress-bar">
+                              <div
+                                className="progress-fill"
+                                style={{ width: `${project.progress}%` }}
+                              ></div>
+                            </div>
                           </div>
+
                           <div className="project-actions">
-                            <Link to={`/projects/${project.id}`}>
-                              <button className="view-button">
-                                View Details
-                              </button>
-                            </Link>
-                            <Link to={`/projects/${project.id}/edit`}>
-                              <button className="edit-button">
-                                Edit Project
-                              </button>
-                            </Link>
+                            <button className="project-action-btn">
+                              <i className="fas fa-chart-line"></i> View
+                              Analytics
+                            </button>
+                            <button className="project-action-btn">
+                              <i className="fas fa-users"></i> Manage Volunteers
+                            </button>
+                            <button className="project-action-btn">
+                              <i className="fas fa-edit"></i> Edit Project
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -518,82 +529,6 @@ function NGODashboard() {
                           <i className="fas fa-plus"></i> Create New Project
                         </button>
                       </Link>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Applications Tab */}
-              {activeTab === "applications" && (
-                <div className="dashboard-section">
-                  <h2 className="section-title">Volunteer Applications</h2>
-
-                  {pendingApplications.length > 0 ? (
-                    <div className="applications-list">
-                      {pendingApplications.map((application) => (
-                        <div key={application.id} className="application-card">
-                          <div className="application-header">
-                            <div className="volunteer-info">
-                              <div className="volunteer-avatar">
-                                {application.volunteerName
-                                  .charAt(0)
-                                  .toUpperCase()}
-                              </div>
-                              <div>
-                                <h3>{application.volunteerName}</h3>
-                                <p>Applied to: {application.projectTitle}</p>
-                              </div>
-                            </div>
-                            <span
-                              className={`status-badge ${application.status.toLowerCase()}`}
-                            >
-                              {application.status}
-                            </span>
-                          </div>
-
-                          <div className="application-meta">
-                            <span>
-                              Applied on:{" "}
-                              {new Date(
-                                application.appliedAt
-                              ).toLocaleDateString()}
-                            </span>
-                          </div>
-
-                          <div className="application-actions">
-                            <button
-                              className="approve-btn"
-                              onClick={() =>
-                                handleApplicationStatusChange(
-                                  application.id,
-                                  "APPROVED"
-                                )
-                              }
-                            >
-                              <i className="fas fa-check"></i> Approve
-                            </button>
-                            <button
-                              className="reject-btn"
-                              onClick={() =>
-                                handleApplicationStatusChange(
-                                  application.id,
-                                  "REJECTED"
-                                )
-                              }
-                            >
-                              <i className="fas fa-times"></i> Reject
-                            </button>
-                            <button className="message-btn">
-                              <i className="fas fa-envelope"></i> Message
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="empty-state">
-                      <i className="fas fa-user-plus"></i>
-                      <p>No pending applications</p>
                     </div>
                   )}
                 </div>
@@ -658,6 +593,88 @@ function NGODashboard() {
                     <div className="empty-state">
                       <i className="fas fa-users"></i>
                       <p>No active volunteers found</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Applications Tab */}
+              {activeTab === "applications" && (
+                <div className="dashboard-section">
+                  <h2 className="section-title">Volunteer Applications</h2>
+
+                  {pendingApplications.length > 0 ? (
+                    <div className="applications-list">
+                      {pendingApplications.map((application) => (
+                        <div key={application.id} className="application-item">
+                          <div className="application-header">
+                            <div className="applicant-info">
+                              <div className="applicant-avatar">
+                                {application.volunteerName
+                                  .charAt(0)
+                                  .toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="applicant-name">
+                                  {application.volunteerName}
+                                </h3>
+                                <p className="applicant-project">
+                                  Applied to: {application.projectTitle}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`application-status status-${application.status.toLowerCase()}`}
+                            >
+                              {application.status}
+                            </span>
+                          </div>
+
+                          <div className="application-details">
+                            <div className="detail-item">
+                              <span className="detail-label">Applied On:</span>
+                              <span className="detail-value">
+                                {new Date(
+                                  application.appliedAt
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="application-actions">
+                            <button
+                              className="approve-btn"
+                              onClick={() =>
+                                handleApplicationStatusChange(
+                                  application.id,
+                                  "APPROVED"
+                                )
+                              }
+                            >
+                              <i className="fas fa-check"></i> Approve
+                            </button>
+                            <button
+                              className="reject-btn"
+                              onClick={() =>
+                                handleApplicationStatusChange(
+                                  application.id,
+                                  "REJECTED"
+                                )
+                              }
+                            >
+                              <i className="fas fa-times"></i> Reject
+                            </button>
+                            <button className="message-btn">
+                              <i className="fas fa-envelope"></i> Message
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <i className="fas fa-user-plus"></i>
+                      <p>No pending applications</p>
                     </div>
                   )}
                 </div>
