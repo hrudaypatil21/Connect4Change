@@ -10,7 +10,7 @@ export default function ProjectsMatch() {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { user, getFreshToken, api } = useAuth();
+  const { user, api, recommendationVersion } = useAuth();
 
   useEffect(() => {
     const fetchRecommendedProjects = async () => {
@@ -22,9 +22,7 @@ export default function ProjectsMatch() {
           throw new Error("Please login to view recommendations");
         }
 
-        const token = await getFreshToken(); // Use getFreshToken instead of user.getIdToken()
-        
-        const response = await api.get("/api/projects/recommended", {
+        const response = await api.get(`/api/recommended?version=${recommendationVersion}`, {
           params: { volunteerId: user.uid },
           headers: { 
             'Cache-Control': 'no-cache',
@@ -37,29 +35,33 @@ export default function ProjectsMatch() {
         }
 
         const formattedProjects = response.data.map((match) => ({
-          ...match.project,
-          matchScore: match.similarityScore,
-          ngoName: match.project.ngo?.orgName || "Unknown NGO",
+          id: match.project.id,
+          title: match.project.title,
+          description: match.project.description,
+          location: match.project.location,
+          skills: match.project.skills || [],
+          status: match.project.status,
+          startedAt: match.project.startedAt,
+          endedAt: match.project.endedAt,
+          image: match.project.image || "/images/default-project.jpg",
+          ngoName: match.project.ngoName || match.project.ngo?.orgName || "Unknown NGO",
+          volunteers: match.project.volunteers || { enrolled: 0, required: 0 },
+          matchScore: match.similarityScore
         }));
 
         setProjects(formattedProjects);
-      
       } catch (err) {
-        if (err.response?.status === 403) {
-          // Handle specific 403 cases
-          if (err.response.data?.message?.contains("UID mismatch")) {
-            setError("You can only view your own recommendations");
-          } else {
-            setError("Please login to view recommendations");
-          }
-        }
+        console.error("Error fetching recommendations:", err);
+        setError(err.response?.status === 403 
+          ? "Session expired. Please refresh the page." 
+          : err.message || "Failed to load recommendations");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRecommendedProjects();
-  }, [user?.uid, getFreshToken, api]);
+  }, [user?.uid, api, recommendationVersion]);
 
   const filteredProjects = projects.filter((project) => {
     if (!searchTerm.trim()) return true;

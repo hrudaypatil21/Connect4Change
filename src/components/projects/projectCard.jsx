@@ -3,7 +3,7 @@ import axios from "axios";
 import { API_BASE_URL } from "../../config/api";
 import "./ProjectCard.css";
 
-const ProjectCard = ({ project, user }) => {
+const ProjectCard = ({ project, user, highlightMatch, matchScore }) => {
   const [isApplying, setIsApplying] = useState(false);
   const [applicationStatus, setApplicationStatus] = useState(null);
   const [error, setError] = useState(null);
@@ -48,13 +48,13 @@ const ProjectCard = ({ project, user }) => {
       setApplicationStatus('applied');
     } catch (error) {
       console.error("Application failed:", error);
+      setError(error.response?.data?.message || "Application failed");
       setApplicationStatus('error');
     } finally {
       setIsApplying(false);
     }
   };
 
-  // Check if user has already applied (if applications data is available)
   const renderApplyButton = () => {
     if (applicationStatus === 'applied') {
       return (
@@ -77,6 +77,12 @@ const ProjectCard = ({ project, user }) => {
 
   return (
     <div className="project-card">
+      {highlightMatch && matchScore && (
+        <div className="match-score-badge">
+          Match: {Math.round(matchScore * 100)}%
+        </div>
+      )}
+      
       <div className="project-image">
         <img
           src={project.image}
@@ -118,8 +124,8 @@ const ProjectCard = ({ project, user }) => {
           <div className="project-skills">
             <span className="skills-label">Skills needed:</span>
             <div className="skills-tags">
-              {project.skills.slice(0, 3).map((skill) => (
-                <span key={skill} className="skill-tag">
+              {project.skills.slice(0, 3).map((skill, index) => (
+                <span key={`${skill}-${index}`} className="skill-tag">
                   {skill}
                 </span>
               ))}
@@ -146,9 +152,9 @@ const ProjectCard = ({ project, user }) => {
         </div>
        
         <div className="project-actions">
-        <button className="action-button primary">View Details</button>
-        {renderApplyButton()}
-      </div>
+          <button className="action-button primary">View Details</button>
+          {renderApplyButton()}
+        </div>
 
         {error && (
           <div className="application-error">
